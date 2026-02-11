@@ -6,7 +6,7 @@ import { RoleCard } from './components/ui/RoleCard';
 import { GameBoard } from './components/GameBoard';
 import { PlayerCircle } from './components/PlayerCircle';
 import { VillageScene } from './components/VillageScene';
-import { Crown, ArrowRight, RefreshCw, Trophy, Eye, Search, Moon, Sparkles, Volume2, VolumeX, Users, Plus, Bot, Medal, Star, PawPrint } from 'lucide-react';
+import { Crown, ArrowRight, RefreshCw, Trophy, Eye, Search, Moon, Sparkles, Volume2, VolumeX, Users, Plus, Bot, Medal, Star, PawPrint } from './utils/icons';
 import { getPuppyAvatarUrl, getPuppySvgMarkup, PUPPY_BREED_NAMES, BREED_LABELS, getBreedEarType, getBreedHasTongue } from './utils/puppyAvatar';
 
 // ─── Avatar options (puppy breeds!) ─────────────────────────────────────

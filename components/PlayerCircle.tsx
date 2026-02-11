@@ -1,6 +1,6 @@
 import React from 'react';
 import { Player, TokenAction } from '../types';
-import { Crown, Bot } from 'lucide-react';
+import { Crown, Bot } from '../utils/icons';
 import { Token } from './ui/Token';
 
 interface PlayerCircleProps {

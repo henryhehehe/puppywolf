@@ -1,7 +1,7 @@
 import React from 'react';
 import { TokenType } from '../../types';
 import { TOKEN_CONFIG } from '../../constants';
-import { CheckCircle, XCircle, HelpCircle, AlertCircle, ThumbsDown, Star } from 'lucide-react';
+import { CheckCircle, XCircle, HelpCircle, AlertCircle, ThumbsDown, Star } from '../../utils/icons';
 
 const ICON_MAP: Record<string, React.FC<{ size?: number; strokeWidth?: number }>> = {
   CheckCircle, XCircle, HelpCircle, AlertCircle, ThumbsDown, Star,

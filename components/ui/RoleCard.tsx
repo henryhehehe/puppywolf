@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Role } from '../../types';
 import { ROLE_DESCRIPTIONS } from '../../constants';
-import { Crown } from 'lucide-react';
+import { Crown } from '../../utils/icons';
 
 interface RoleCardProps {
   role: Role;

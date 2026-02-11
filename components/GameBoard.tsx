@@ -1,7 +1,7 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { GameState, TokenType, GuessEntry, Role } from '../types';
 import { Token } from './ui/Token';
-import { Clock, Crown, Sun, Send, MessageCircle, Eye, Shield, Skull } from 'lucide-react';
+import { Clock, Crown, Sun, Send, MessageCircle, Eye, Shield, Skull } from '../utils/icons';
 import { TOKEN_CONFIG } from '../constants';
 import { audioService } from '../services/audioService';
 
