@@ -1,21 +1,16 @@
 # =============================================================================
 # Multi-stage Dockerfile for WerePups Online
-# Frontend and backend build in PARALLEL for faster builds.
 # =============================================================================
 
 # --- Stage 1: Build Frontend ---
 FROM node:20-alpine AS frontend-builder
 WORKDIR /app
 COPY package.json package-lock.json* ./
-RUN npm install --no-audit --no-fund --prefer-offline
-COPY index.html index.tsx index.css* tsconfig.json vite.config.ts ./
-COPY components/ ./components/
-COPY services/ ./services/
-COPY utils/ ./utils/
-COPY App.tsx constants.ts types.ts metadata.json ./
-RUN npx vite build
+RUN npm install --no-audit --no-fund
+COPY . .
+RUN ./node_modules/.bin/vite build
 
-# --- Stage 2: Build Backend (runs in parallel with Stage 1) ---
+# --- Stage 2: Build Backend (parallel with Stage 1) ---
 FROM golang:1.22-alpine AS backend-builder
 WORKDIR /app
 COPY server/go.mod server/go.sum ./
@@ -24,10 +19,10 @@ COPY server/ .
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o werewords-server .
 
 # --- Stage 3: Minimal production image ---
-FROM scratch
-COPY --from=backend-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-COPY --from=backend-builder /app/werewords-server /app/werewords-server
-COPY --from=frontend-builder /app/dist /app/static
+FROM alpine:3.20
+RUN apk --no-cache add ca-certificates
 WORKDIR /app
+COPY --from=backend-builder /app/werewords-server .
+COPY --from=frontend-builder /app/dist ./static
 EXPOSE 8080
-ENTRYPOINT ["./werewords-server"]
+CMD ["./werewords-server"]
