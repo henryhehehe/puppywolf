@@ -185,6 +185,127 @@ const ReactionBar: React.FC<{ onReaction: (emoji: string) => void }> = ({ onReac
   );
 };
 
+// ─── Lobby Lore Background ──────────────────────────────────────────
+const LORE_LINES = [
+  { text: 'In the Puppy Kingdom, every pup was happy...', emoji: '🏰', delay: 0 },
+  { text: '...playing fetch under the golden sun.', emoji: '☀️', delay: 1.5 },
+  { text: 'But one night, the moon turned red.', emoji: '🌙', delay: 4 },
+  { text: 'Some pups began to howl differently...', emoji: '🐺', delay: 7 },
+  { text: '...their eyes glowed in the dark.', emoji: '👀', delay: 9 },
+  { text: 'WerePups walked among the good pups!', emoji: '😱', delay: 11.5 },
+  { text: 'Now the pack must sniff out the truth.', emoji: '🐾', delay: 14 },
+  { text: 'Can you tell friend from foe?', emoji: '🔍', delay: 16.5 },
+  { text: 'Trust no tail wag. Question every bark.', emoji: '❓', delay: 19 },
+  { text: 'The Puppy Kingdom depends on you!', emoji: '💛', delay: 22 },
+];
+
+const LobbyLoreBackground = () => {
+  // Drifting lore text
+  const loreCycle = useMemo(() => {
+    const totalDur = 26;
+    return LORE_LINES.map((line, i) => ({
+      ...line,
+      // Position: stagger across the screen
+      left: 8 + ((i * 37 + 11) % 75),
+      top: 10 + ((i * 29 + 5) % 65),
+      fontSize: i === 0 || i === LORE_LINES.length - 1 ? 15 : 12,
+      totalDur,
+    }));
+  }, []);
+
+  // Cute floating SVG illustrations
+  const illustrations = useMemo(() => [
+    // sleeping puppy
+    { x: 8, y: 72, size: 50, content: '💤', delay: 1 },
+    // bone
+    { x: 85, y: 18, size: 28, content: '🦴', delay: 3 },
+    // paw prints walking
+    { x: 15, y: 30, size: 22, content: '🐾', delay: 0 },
+    { x: 22, y: 26, size: 20, content: '🐾', delay: 0.5 },
+    { x: 29, y: 30, size: 18, content: '🐾', delay: 1 },
+    // little house
+    { x: 75, y: 68, size: 36, content: '🏠', delay: 2 },
+    // moon
+    { x: 88, y: 8, size: 40, content: '🌕', delay: 0 },
+    // flower
+    { x: 45, y: 78, size: 24, content: '🌸', delay: 4 },
+    // tree
+    { x: 60, y: 72, size: 32, content: '🌳', delay: 1.5 },
+    // star
+    { x: 35, y: 12, size: 18, content: '⭐', delay: 2.5 },
+    { x: 55, y: 8, size: 14, content: '✨', delay: 3.5 },
+    { x: 70, y: 15, size: 16, content: '⭐', delay: 1 },
+  ], []);
+
+  return (
+    <div className="fixed inset-0 z-[8] pointer-events-none overflow-hidden">
+      {/* Subtle radial glow in center */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(251,191,36,0.03)_0%,transparent_70%)]" />
+
+      {/* Floating SVG illustrations */}
+      {illustrations.map((ill, i) => (
+        <div
+          key={`ill-${i}`}
+          className="absolute animate-float"
+          style={{
+            left: `${ill.x}%`,
+            top: `${ill.y}%`,
+            fontSize: ill.size,
+            opacity: 0.08,
+            animationDelay: `${ill.delay}s`,
+            animationDuration: `${4 + (i % 3)}s`,
+          }}
+        >
+          {ill.content}
+        </div>
+      ))}
+
+      {/* Animated lore text lines — appear, linger, fade */}
+      {loreCycle.map((line, i) => (
+        <div
+          key={`lore-${i}`}
+          className="absolute"
+          style={{
+            left: `${line.left}%`,
+            top: `${line.top}%`,
+            maxWidth: '260px',
+            animation: `lore-text-cycle ${line.totalDur}s ${line.delay}s ease-in-out infinite`,
+            opacity: 0,
+          }}
+        >
+          <div className="flex items-center gap-2">
+            <span style={{ fontSize: line.fontSize + 4 }}>{line.emoji}</span>
+            <p
+              className="text-slate-400/30 font-serif italic leading-snug"
+              style={{ fontSize: line.fontSize }}
+            >
+              {line.text}
+            </p>
+          </div>
+        </div>
+      ))}
+
+      {/* Wandering paw trail (a line of paws walking across bottom) */}
+      <div className="absolute bottom-[15%] left-0 w-full">
+        <div className="flex items-center gap-6" style={{ animation: 'paw-walk 20s linear infinite' }}>
+          {Array.from({ length: 12 }, (_, i) => (
+            <span
+              key={`pw-${i}`}
+              className="text-amber-400/5 inline-block"
+              style={{
+                fontSize: 16 + (i % 3) * 4,
+                transform: `rotate(${i % 2 === 0 ? -15 : 15}deg)`,
+              }}
+            >
+              🐾
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ─── Mute button ───────────────────────────────────────────────────────
 const MuteButton = () => {
   const [muted, setMuted] = useState(audioService.muted);
@@ -367,6 +488,21 @@ const App = () => {
     if (gameState.phase === GamePhase.ROLE_REVEAL) setRoleRevealed(false);
   }, [gameState.phase]);
 
+  // ── Dynamic page title ──
+  useEffect(() => {
+    const titles: Record<string, string> = {
+      [GamePhase.LOGIN]: '🐾 WerePups Online',
+      [GamePhase.LOBBY]: '🏠 Pack Gathering | WerePups',
+      [GamePhase.ROLE_REVEAL]: '🌙 Night Falls... | WerePups',
+      [GamePhase.WORD_SELECTION]: '📝 Choosing Word... | WerePups',
+      [GamePhase.DAY_PHASE]: '☀️ Day Phase | WerePups',
+      [GamePhase.VOTING]: '🗳️ Vote Now! | WerePups',
+      [GamePhase.WEREWOLF_GUESS]: '🐺 Werewolf Hunt | WerePups',
+      [GamePhase.GAME_OVER]: gameState.winner === 'VILLAGE' ? '🎉 Village Wins! | WerePups' : '🐺 Wolves Win! | WerePups',
+    };
+    document.title = titles[gameState.phase] || '🐾 WerePups Online';
+  }, [gameState.phase, gameState.winner]);
+
   // ── Handlers ──
   const handleJoin = useCallback((e: React.FormEvent) => {
     e.preventDefault();
@@ -490,11 +626,13 @@ const App = () => {
                 <div className="text-center mb-6">
                   <div className="inline-block mb-3 animate-float">
                     <div className="w-20 h-20 mx-auto bg-gradient-to-br from-amber-400/20 to-orange-500/20 rounded-full flex items-center justify-center border-2 border-amber-500/30">
-                      <span className="text-4xl">🐾</span>
+                      <span className="text-4xl animate-emoji-bounce">🐾</span>
                     </div>
                   </div>
                   <h1 className="text-4xl font-serif text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-orange-400 to-amber-300 font-bold tracking-tight">
-                    WEREPUPS
+                    {'WEREPUPS'.split('').map((ch, i) => (
+                      <span key={i} className="wiggle-letter" style={{ animationDelay: `${i * 0.12}s` }}>{ch}</span>
+                    ))}
                   </h1>
                   <p className="text-slate-400 mt-1.5 text-sm flex items-center justify-center gap-1.5">
                     <PawPrint size={14} className="text-amber-500/50" />
@@ -505,13 +643,15 @@ const App = () => {
 
                 <form onSubmit={handleJoin} className="space-y-5">
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">Your Name</label>
+                    <label className="block text-sm font-medium text-slate-300 mb-2 flex items-center gap-1.5">
+                      <span className="text-base">🐶</span> What's your name, pup?
+                    </label>
                     <input
                       type="text"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                       className="w-full px-4 py-3 bg-slate-800/80 border border-slate-600/50 rounded-xl focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 outline-none text-white placeholder-slate-500 transition-all"
-                      placeholder="e.g. FluffyPup42"
+                      placeholder={['FluffyPup42', 'Sir Barksalot', 'WoofMaster', 'SnugglePaws', 'Captain Bork'][Math.floor(Date.now() / 5000) % 5]}
                       autoFocus
                     />
                   </div>
@@ -560,12 +700,13 @@ const App = () => {
                     disabled={!username.trim()}
                     className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-slate-900 font-bold py-3.5 rounded-xl hover:from-amber-400 hover:to-orange-400 transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-amber-500/20 text-lg flex items-center justify-center gap-2"
                   >
-                    <Plus size={20} /> Create New Room
+                    <span className="text-xl">🐾</span> Start a New Pack
                   </button>
                 </form>
 
                 {/* Room Browser */}
-                <div className="mt-5 border-t border-slate-700/50 pt-5">
+                <div className="mt-5 pt-4">
+                  <div className="paw-divider mb-4">🐾</div>
                   <button
                     onClick={() => { setShowRoomBrowser(!showRoomBrowser); gameService.listRooms(); }}
                     className="w-full flex items-center justify-between text-sm text-slate-400 hover:text-slate-200 transition-colors"
@@ -585,7 +726,11 @@ const App = () => {
                   {showRoomBrowser && (
                     <div className="mt-3 space-y-2 max-h-48 overflow-y-auto">
                       {lobbyRooms.length === 0 ? (
-                        <p className="text-slate-600 text-xs text-center py-4">No rooms available. Create one!</p>
+                        <div className="text-center py-6">
+                          <span className="text-2xl block mb-1.5">🐾</span>
+                          <p className="text-slate-500 text-xs">No packs gathering yet...</p>
+                          <p className="text-slate-600 text-[10px] mt-0.5">Be the first to create a room!</p>
+                        </div>
                       ) : (
                         lobbyRooms.map((room) => (
                           <div key={room.code} className="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700/40 hover:border-slate-600/60 transition-all animate-slide-in-right">
@@ -625,15 +770,20 @@ const App = () => {
         const lobbyPlayers = gameState.players;
         const readyCount = lobbyPlayers.filter(p => p.isReady).length;
         const funFacts = [
-          'Did you know? Puppies dream about playing fetch!',
-          'A wagging tail means a happy pup!',
-          'Puppies can learn up to 250 words!',
-          'A group of puppies is called a litter!',
-          'Puppies sleep 18-20 hours a day!',
+          '🐶 Puppies dream about playing fetch!',
+          '🐾 A wagging tail means a happy pup!',
+          '🧠 Puppies can learn up to 250 words!',
+          '🐕 A group of puppies is called a litter!',
+          '💤 Puppies sleep 18-20 hours a day!',
+          '🐺 Wolves can hear sounds up to 10 miles away!',
+          '🌙 WerePups only reveal themselves at night...',
+          '🔮 The Psychic Pup always knows the truth!',
         ];
         const factIndex = Math.floor((Date.now() / 8000)) % funFacts.length;
 
         return (
+          <>
+          <LobbyLoreBackground />
           <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8 relative z-10">
             <div className="w-full max-w-2xl flex flex-col items-center gap-6">
 
@@ -684,7 +834,7 @@ const App = () => {
                     return (
                       <div
                         key={player.id}
-                        className={`animate-card-appear flex flex-col items-center p-3 rounded-2xl border transition-all duration-300 hover:scale-[1.03]
+                        className={`animate-card-appear hover-tilt flex flex-col items-center p-3 rounded-2xl border transition-all duration-300
                           ${player.isReady
                             ? 'bg-green-500/5 border-green-500/25 shadow-[0_0_12px_rgba(34,197,94,0.08)]'
                             : isMe
@@ -895,22 +1045,25 @@ const App = () => {
               {!allReady && lobbyPlayers.length >= 2 && (
                 <div className="text-center animate-fade-in-up">
                   <p className="text-slate-500 text-xs flex items-center gap-2 justify-center">
-                    <span className="flex gap-0.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400/60 animate-bounce" style={{ animationDelay: '0ms' }} />
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400/60 animate-bounce" style={{ animationDelay: '150ms' }} />
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400/60 animate-bounce" style={{ animationDelay: '300ms' }} />
-                    </span>
-                    Waiting for all pups to ready up
+                    <span className="text-base animate-emoji-bounce">🐕</span>
+                    Sniffing around
+                    <span className="sniff-dots"><span>.</span><span>.</span><span>.</span></span>
+                    waiting for all pups
                   </p>
                 </div>
               )}
               {lobbyPlayers.length < 2 && (
                 <div className="text-center animate-fade-in-up">
-                  <p className="text-slate-500 text-xs">Need at least 2 pups to start. Share the room code!</p>
+                  <p className="text-slate-500 text-xs flex items-center justify-center gap-1.5">
+                    <span className="text-base">🐶</span>
+                    It's lonely here! Need at least 2 pups to start.
+                  </p>
+                  <p className="text-slate-600 text-[10px] mt-1">Share the room code with your friends!</p>
                 </div>
               )}
             </div>
           </div>
+          </>
         );
       })()}
 
@@ -1038,8 +1191,11 @@ const App = () => {
               }
             />
             {hasVoted && (
-              <div className="mt-4 text-slate-400 text-sm animate-pulse text-center">
-                Waiting for the other pups to sniff out the wolf...
+              <div className="mt-4 text-slate-400 text-sm text-center flex items-center justify-center gap-2">
+                <span className="animate-emoji-bounce">🐾</span>
+                Sniffing
+                <span className="sniff-dots"><span>.</span><span>.</span><span>.</span></span>
+                waiting for the other pups
               </div>
             )}
           </div>

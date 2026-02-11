@@ -74,6 +74,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ state, onTokenClick, onSub
   const [guessText, setGuessText] = useState('');
   const [guessSent, setGuessSent] = useState(false);
   const [flashTokenIds, setFlashTokenIds] = useState<Set<string>>(new Set());
+  const [heartBursts, setHeartBursts] = useState<{id: number; x: number; y: number}[]>([]);
+  const nextHeartId = useRef(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Track "new" guesses for pop animation + sound
@@ -98,16 +100,33 @@ export const GameBoard: React.FC<GameBoardProps> = ({ state, onTokenClick, onSub
     prevGuessIdsRef.current = new Set((state.guesses || []).map(g => g.playerId));
   }, [state.guesses]);
 
-  // Track new tokens for flash animation + sound
+  // Track new tokens for flash animation + sound + heart bursts
   const prevTokenCountRef = useRef(state.tokenHistory.length);
   useEffect(() => {
     if (state.tokenHistory.length > prevTokenCountRef.current) {
-      // New token(s) arrived
       const newTokens = state.tokenHistory.slice(0, state.tokenHistory.length - prevTokenCountRef.current);
       audioService.playTokenReceived();
       const ids = new Set(newTokens.map(t => t.id));
       setFlashTokenIds(ids);
       setTimeout(() => setFlashTokenIds(new Set()), 600);
+
+      // Spawn heart particles for YES / CORRECT tokens
+      newTokens.forEach(t => {
+        if (t.type === 'YES' || t.type === 'CORRECT' || t.type === 'SO_CLOSE') {
+          const hearts: {id: number; x: number; y: number}[] = [];
+          for (let i = 0; i < 3; i++) {
+            hearts.push({
+              id: nextHeartId.current++,
+              x: 30 + Math.random() * 40,
+              y: 30 + Math.random() * 30,
+            });
+          }
+          setHeartBursts(prev => [...prev, ...hearts]);
+          setTimeout(() => {
+            setHeartBursts(prev => prev.filter(h => !hearts.find(nh => nh.id === h.id)));
+          }, 1500);
+        }
+      });
     }
     prevTokenCountRef.current = state.tokenHistory.length;
   }, [state.tokenHistory]);
@@ -201,6 +220,22 @@ export const GameBoard: React.FC<GameBoardProps> = ({ state, onTokenClick, onSub
 
   return (
     <div className={`flex flex-col h-full max-w-2xl mx-auto px-3 pt-3 pb-2 overflow-hidden ${isCriticalTime ? 'animate-[screen-shake_0.3s_ease-in-out_infinite]' : ''}`}>
+
+      {/* Floating hearts on positive tokens */}
+      {heartBursts.map(h => (
+        <div
+          key={h.id}
+          className="animate-heart-float"
+          style={{
+            left: `${h.x}%`,
+            top: `${h.y}%`,
+            ['--hx' as string]: `${(Math.random() - 0.5) * 30}px`,
+            fontSize: 16 + Math.random() * 10,
+          }}
+        >
+          {['💖', '💛', '✨', '🌟'][h.id % 4]}
+        </div>
+      ))}
 
       {/* ─── Top Bar: Timer + Secret Word (compact) ─── */}
       <div className="flex items-center justify-between bg-slate-900/50 backdrop-blur-md px-3 py-2 rounded-xl border border-slate-700/40 shrink-0">
@@ -438,7 +473,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ state, onTokenClick, onSub
                 value={guessText}
                 onChange={(e) => setGuessText(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="What's your guess, pup?"
+                placeholder={['What\'s your guess, pup?', 'Sniff sniff... is it...?', 'I think the word is...', 'My puppy senses say...', '*wags tail* Could it be...'][Math.floor(Date.now() / 8000) % 5]}
                 maxLength={80}
                 className="flex-1 bg-slate-800/80 border border-slate-600/50 rounded-lg px-2.5 py-2 text-sm text-slate-100
                   placeholder-slate-500 focus:outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/20
