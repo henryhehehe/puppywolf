@@ -6,8 +6,11 @@
 FROM node:20-alpine AS frontend-builder
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --no-audit --no-fund
-COPY . .
+RUN npm ci --no-audit --no-fund --prefer-offline && ls node_modules/.bin/vite
+COPY tsconfig.json vite.config.ts index.html App.tsx types.ts constants.ts index.tsx metadata.json ./
+COPY components/ ./components/
+COPY services/ ./services/
+COPY utils/ ./utils/
 RUN ./node_modules/.bin/vite build
 
 # --- Stage 2: Build Backend (parallel with Stage 1) ---
