@@ -1,9 +1,11 @@
 node_modules
 dist
 server/werewords-server
+server/server
 .git
 .env.local
 *.md
 .dockerignore
 Dockerfile
 docker-compose.yml
+.tool-versions

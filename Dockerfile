@@ -6,10 +6,10 @@
 # --- Stage 1: Build Frontend ---
 FROM node:20-alpine AS frontend-builder
 WORKDIR /app
-COPY package*.json ./
-RUN npm ci
+COPY package.json package-lock.json* ./
+RUN npm install --no-audit --no-fund
 COPY . .
-RUN npm run build
+RUN npx vite build
 
 # --- Stage 2: Build Backend ---
 FROM golang:1.22-alpine AS backend-builder
