@@ -1,31 +1,21 @@
 # =============================================================================
-# Multi-stage Dockerfile for WerePups Online
+# Dockerfile for WerePups Online
+# Frontend is pre-built (dist/ committed to repo). Only Go backend is built here.
 # =============================================================================
 
-# --- Stage 1: Build Frontend ---
-FROM node:20-alpine AS frontend-builder
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci --no-audit --no-fund --prefer-offline && ls node_modules/.bin/vite
-COPY tsconfig.json vite.config.ts index.html App.tsx types.ts constants.ts index.tsx metadata.json ./
-COPY components/ ./components/
-COPY services/ ./services/
-COPY utils/ ./utils/
-RUN ./node_modules/.bin/vite build
-
-# --- Stage 2: Build Backend (parallel with Stage 1) ---
-FROM golang:1.22-alpine AS backend-builder
+# --- Stage 1: Build Backend ---
+FROM golang:1.22-alpine AS builder
 WORKDIR /app
 COPY server/go.mod server/go.sum ./
 RUN go mod download
 COPY server/ .
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o werewords-server .
 
-# --- Stage 3: Minimal production image ---
+# --- Stage 2: Minimal production image ---
 FROM alpine:3.20
 RUN apk --no-cache add ca-certificates
 WORKDIR /app
-COPY --from=backend-builder /app/werewords-server .
-COPY --from=frontend-builder /app/dist ./static
+COPY --from=builder /app/werewords-server .
+COPY dist/ ./static/
 EXPOSE 8080
 CMD ["./werewords-server"]
