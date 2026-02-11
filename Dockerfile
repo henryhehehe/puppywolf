@@ -5,8 +5,8 @@
 # --- Stage 1: Build Frontend ---
 FROM node:20-alpine AS frontend-builder
 WORKDIR /app
-COPY package.json package-lock.json* ./
-RUN npm install --no-audit --no-fund
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
 COPY . .
 RUN ./node_modules/.bin/vite build
 

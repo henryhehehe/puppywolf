@@ -1,7 +1,11 @@
 import React from 'react';
 import { TokenType } from '../../types';
 import { TOKEN_CONFIG } from '../../constants';
-import * as Icons from 'lucide-react';
+import { CheckCircle, XCircle, HelpCircle, AlertCircle, ThumbsDown, Star } from 'lucide-react';
+
+const ICON_MAP: Record<string, React.FC<{ size?: number; strokeWidth?: number }>> = {
+  CheckCircle, XCircle, HelpCircle, AlertCircle, ThumbsDown, Star,
+};
 
 interface TokenProps {
   type: TokenType;
@@ -12,7 +16,7 @@ interface TokenProps {
 
 export const Token: React.FC<TokenProps> = ({ type, onClick, disabled, size = 'md' }) => {
   const config = TOKEN_CONFIG[type];
-  const Icon = (Icons as any)[config.icon] || Icons.HelpCircle;
+  const Icon = ICON_MAP[config.icon] || HelpCircle;
 
   const sizeClasses = {
     sm: 'w-10 h-10',
