@@ -27,6 +27,7 @@ export interface Player {
   votesReceived?: number;
   isBot?: boolean;
   score: number;
+  achievements?: string[];
 }
 
 export enum TokenType {
@@ -51,11 +52,14 @@ export interface GuessEntry {
   timestamp: number;
 }
 
+export type Difficulty = 'EASY' | 'MEDIUM' | 'HARD';
+
 export interface GameState {
   phase: GamePhase;
   roomCode: string;
   players: Player[];
   secretWord: string;
+  secretWordHints?: string;
   wordOptions?: string[];
   timeRemaining: number;
   tokensUsed: number;
@@ -63,6 +67,9 @@ export interface GameState {
   guesses: GuessEntry[];
   winner?: 'VILLAGE' | 'WEREWOLF';
   myPlayerId: string | null;
+  difficulty: Difficulty;
+  hintsRevealed: number;
+  numWerewolves: number;
 }
 
 export interface RoomInfo {
@@ -73,7 +80,10 @@ export interface RoomInfo {
   playerNames: string[];
 }
 
-export type Difficulty = 'EASY' | 'MEDIUM' | 'HARD';
+export interface ReactionEvent {
+  playerId: string;
+  emoji: string;
+}
 
 // --- BACKEND INTEGRATION TYPES ---
 
@@ -90,7 +100,11 @@ export interface GameService {
   resetGame(): void;
   listRooms(): void;
   addBot(): void;
+  sendReaction(emoji: string): void;
+  revealHint(): void;
+  setDifficulty(difficulty: Difficulty): void;
   onRoomList(listener: (rooms: RoomInfo[]) => void): () => void;
+  onReaction(listener: (reaction: ReactionEvent) => void): () => void;
 }
 
 // Protocol: Messages sent FROM Frontend TO Backend
@@ -105,10 +119,14 @@ export type ClientMessage =
   | { type: 'VOTE'; payload: { targetId: string } }
   | { type: 'RESET_GAME' }
   | { type: 'LIST_ROOMS' }
-  | { type: 'ADD_BOT' };
+  | { type: 'ADD_BOT' }
+  | { type: 'SEND_REACTION'; payload: { emoji: string } }
+  | { type: 'REVEAL_HINT' }
+  | { type: 'SET_DIFFICULTY'; payload: { difficulty: Difficulty } };
 
 // Protocol: Messages sent FROM Backend TO Frontend
 export type ServerMessage = 
   | { type: 'STATE_UPDATE'; payload: GameState }
   | { type: 'ERROR'; payload: { message: string } }
-  | { type: 'ROOM_LIST'; payload: { rooms: RoomInfo[] } };
+  | { type: 'ROOM_LIST'; payload: { rooms: RoomInfo[] } }
+  | { type: 'REACTION'; payload: ReactionEvent };

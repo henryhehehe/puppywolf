@@ -45,19 +45,28 @@ const (
 	WinnerWerewolf = "WEREWOLF"
 )
 
+// --- Difficulty Constants ---
+
+const (
+	DifficultyEasy   = "EASY"
+	DifficultyMedium = "MEDIUM"
+	DifficultyHard   = "HARD"
+)
+
 // --- Data Structures ---
 
 type Player struct {
-	ID            string `json:"id"`
-	Name          string `json:"name"`
-	Role          string `json:"role"`
-	IsMayor       bool   `json:"isMayor"`
-	IsReady       bool   `json:"isReady"`
-	WantsMayor    bool   `json:"wantsMayor"`
-	AvatarURL     string `json:"avatarUrl,omitempty"`
-	VotesReceived int    `json:"votesReceived"`
-	IsBot         bool   `json:"isBot"`
-	Score         int    `json:"score"`
+	ID            string   `json:"id"`
+	Name          string   `json:"name"`
+	Role          string   `json:"role"`
+	IsMayor       bool     `json:"isMayor"`
+	IsReady       bool     `json:"isReady"`
+	WantsMayor    bool     `json:"wantsMayor"`
+	AvatarURL     string   `json:"avatarUrl,omitempty"`
+	VotesReceived int      `json:"votesReceived"`
+	IsBot         bool     `json:"isBot"`
+	Score         int      `json:"score"`
+	Achievements  []string `json:"achievements,omitempty"`
 }
 
 type TokenAction struct {
@@ -74,17 +83,21 @@ type GuessEntry struct {
 }
 
 type GameState struct {
-	Phase         string        `json:"phase"`
-	RoomCode      string        `json:"roomCode"`
-	Players       []Player      `json:"players"`
-	SecretWord    string        `json:"secretWord"`
-	WordOptions   []string      `json:"wordOptions,omitempty"`
-	TimeRemaining int           `json:"timeRemaining"`
-	TokensUsed    int           `json:"tokensUsed"`
-	TokenHistory  []TokenAction `json:"tokenHistory"`
-	Guesses       []GuessEntry  `json:"guesses"`
-	Winner        string        `json:"winner,omitempty"`
-	MyPlayerID    string        `json:"myPlayerId"`
+	Phase            string        `json:"phase"`
+	RoomCode         string        `json:"roomCode"`
+	Players          []Player      `json:"players"`
+	SecretWord       string        `json:"secretWord"`
+	SecretWordHints  string        `json:"secretWordHints,omitempty"`
+	WordOptions      []string      `json:"wordOptions,omitempty"`
+	TimeRemaining    int           `json:"timeRemaining"`
+	TokensUsed       int           `json:"tokensUsed"`
+	TokenHistory     []TokenAction `json:"tokenHistory"`
+	Guesses          []GuessEntry  `json:"guesses"`
+	Winner           string        `json:"winner,omitempty"`
+	MyPlayerID       string        `json:"myPlayerId"`
+	Difficulty       string        `json:"difficulty"`
+	HintsRevealed    int           `json:"hintsRevealed"`
+	NumWerewolves    int           `json:"numWerewolves"`
 }
 
 // RoomInfo is a summary of a room for the room browser.
@@ -124,6 +137,20 @@ type ChooseWordPayload struct {
 
 type VotePayload struct {
 	TargetID string `json:"targetId"`
+}
+
+type SendReactionPayload struct {
+	Emoji string `json:"emoji"`
+}
+
+type SetDifficultyPayload struct {
+	Difficulty string `json:"difficulty"`
+}
+
+// ReactionBroadcast is an ephemeral message broadcast to all clients.
+type ReactionBroadcast struct {
+	PlayerID string `json:"playerId"`
+	Emoji    string `json:"emoji"`
 }
 
 // --- Server → Client Messages ---

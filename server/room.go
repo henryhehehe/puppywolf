@@ -40,6 +40,12 @@ type Room struct {
 	votes         map[string]string
 	scores        map[string]int // persistent scores keyed by player ID
 
+	// New features
+	difficulty    string
+	hintsRevealed int
+	hintIndices   []int // indices of revealed letters
+	achievements  map[string][]string // persistent achievements per player
+
 	gameEpoch int
 	ticker    *time.Ticker
 	stopCh    chan struct{}
@@ -58,6 +64,8 @@ func newRoom(code string, hub *Hub) *Room {
 		guesses:      make(map[string]*GuessEntry),
 		votes:        make(map[string]string),
 		scores:       make(map[string]int),
+		difficulty:   DifficultyMedium,
+		achievements: make(map[string][]string),
 	}
 }
 
@@ -374,7 +382,9 @@ func (r *Room) startGame() {
 	}
 
 	r.secretWord = ""
-	r.wordOptions = getRandomWords(5)
+	r.wordOptions = getRandomWordsByDifficulty(5, r.difficulty)
+	r.hintsRevealed = 0
+	r.hintIndices = nil
 	r.timeRemaining = initialTime
 	r.tokensUsed = 0
 	r.tokenHistory = make([]TokenAction, 0)
@@ -515,13 +525,20 @@ func (r *Room) transitionToDayPhase() {
 	log.Printf("[Room %s] Word chosen: %q — Day phase started", r.code, r.secretWord)
 }
 
+func (r *Room) getNumWerewolves(count int) int {
+	if count >= 10 {
+		return 3
+	}
+	if count >= 6 {
+		return 2
+	}
+	return 1
+}
+
 func (r *Room) generateRoles(count int) []string {
 	roles := make([]string, count)
 	idx := 0
-	numWerewolves := 1
-	if count >= 6 {
-		numWerewolves = 2
-	}
+	numWerewolves := r.getNumWerewolves(count)
 	for i := 0; i < numWerewolves; i++ {
 		roles[idx] = RoleWerewolf
 		idx++
@@ -673,6 +690,133 @@ func (r *Room) handleSubmitToken(c *Client, payload SubmitTokenPayload) {
 	} else {
 		r.broadcastState()
 	}
+}
+
+// ============================================================
+// Reactions (ephemeral broadcast)
+// ============================================================
+
+var allowedReactions = map[string]bool{
+	"🤨": true, "😂": true, "😱": true, "🤔": true,
+	"❤️": true, "🐾": true, "🐺": true, "🦴": true,
+	"BARK": true,
+}
+
+func (r *Room) handleSendReaction(c *Client, payload SendReactionPayload) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if !allowedReactions[payload.Emoji] {
+		return
+	}
+
+	reaction := ReactionBroadcast{
+		PlayerID: c.playerID,
+		Emoji:    payload.Emoji,
+	}
+	for _, client := range r.clients {
+		client.sendReaction(reaction)
+	}
+}
+
+// ============================================================
+// Hints (Mayor reveals letters)
+// ============================================================
+
+func (r *Room) handleRevealHint(c *Client) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if r.phase != PhaseDayPhase {
+		c.sendError("Can only reveal hints during the day phase")
+		return
+	}
+	player := r.players[c.playerID]
+	if player == nil || !player.IsMayor {
+		c.sendError("Only the Pack Leader can reveal hints")
+		return
+	}
+
+	word := r.secretWord
+	maxHints := len(word) / 2
+	if r.hintsRevealed >= maxHints {
+		c.sendError("No more hints available")
+		return
+	}
+
+	// Pick a random unrevealed letter index
+	revealed := make(map[int]bool)
+	for _, idx := range r.hintIndices {
+		revealed[idx] = true
+	}
+	candidates := make([]int, 0)
+	for i, ch := range word {
+		if ch != ' ' && !revealed[i] {
+			candidates = append(candidates, i)
+		}
+	}
+	if len(candidates) == 0 {
+		return
+	}
+	chosen := candidates[rand.Intn(len(candidates))]
+	r.hintIndices = append(r.hintIndices, chosen)
+	r.hintsRevealed++
+
+	// Deduct 1 score from Mayor
+	r.scores[c.playerID]--
+	if r.scores[c.playerID] < 0 {
+		r.scores[c.playerID] = 0
+	}
+
+	r.broadcastState()
+}
+
+func (r *Room) buildHintString() string {
+	if r.secretWord == "" || r.hintsRevealed == 0 {
+		return ""
+	}
+	revealed := make(map[int]bool)
+	for _, idx := range r.hintIndices {
+		revealed[idx] = true
+	}
+	result := make([]byte, 0, len(r.secretWord)*2)
+	for i, ch := range r.secretWord {
+		if i > 0 {
+			result = append(result, ' ')
+		}
+		if ch == ' ' {
+			result = append(result, ' ')
+		} else if revealed[i] {
+			result = append(result, byte(ch))
+		} else {
+			result = append(result, '_')
+		}
+	}
+	return string(result)
+}
+
+// ============================================================
+// Difficulty
+// ============================================================
+
+func (r *Room) handleSetDifficulty(c *Client, payload SetDifficultyPayload) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if r.phase != PhaseLobby {
+		c.sendError("Can only change difficulty in lobby")
+		return
+	}
+
+	switch payload.Difficulty {
+	case DifficultyEasy, DifficultyMedium, DifficultyHard:
+		r.difficulty = payload.Difficulty
+	default:
+		c.sendError("Invalid difficulty")
+		return
+	}
+
+	r.broadcastState()
 }
 
 // ============================================================
@@ -858,6 +1002,16 @@ func (r *Room) resolveWerewolfGuess() {
 // Game End & Reset
 // ============================================================
 
+func (r *Room) addAchievement(playerID, achievement string) {
+	existing := r.achievements[playerID]
+	for _, a := range existing {
+		if a == achievement {
+			return // already has it
+		}
+	}
+	r.achievements[playerID] = append(existing, achievement)
+}
+
 func (r *Room) endGame(winner string) {
 	r.stopTimers()
 	r.winner = winner
@@ -870,21 +1024,79 @@ func (r *Room) endGame(winner string) {
 			continue
 		}
 		if winner == WinnerVillage {
-			// Village team wins: non-werewolves score
 			if p.Role != RoleWerewolf {
 				r.scores[id]++
 				if p.IsMayor {
-					r.scores[id]++ // Mayor bonus
+					r.scores[id]++
 				}
 			}
 		} else {
-			// Werewolf team wins
 			if p.Role == RoleWerewolf {
 				r.scores[id] += 2
 			}
 		}
-		// Sync score into player struct for broadcasting
 		p.Score = r.scores[id]
+	}
+
+	// Award achievements
+	// "Master of Disguise" — won as werewolf
+	if winner == WinnerWerewolf {
+		for _, id := range r.order {
+			if p := r.players[id]; p != nil && p.Role == RoleWerewolf {
+				r.addAchievement(id, "Master of Disguise")
+			}
+		}
+	}
+	// "Pack Leader" — won as Mayor (village win)
+	if winner == WinnerVillage {
+		for _, id := range r.order {
+			if p := r.players[id]; p != nil && p.IsMayor {
+				r.addAchievement(id, "Pack Leader")
+			}
+		}
+	}
+	// "Eagle Eye" — was the Seer and village won
+	if winner == WinnerVillage {
+		for _, id := range r.order {
+			if p := r.players[id]; p != nil && p.Role == RoleSeer {
+				r.addAchievement(id, "Eagle Eye")
+			}
+		}
+	}
+	// "First Blood" — first player to guess a word that triggered CORRECT token
+	if len(r.tokenHistory) > 0 {
+		// Find the CORRECT token (if any)
+		for i := len(r.tokenHistory) - 1; i >= 0; i-- {
+			if r.tokenHistory[i].Type == TokenCorrect && r.tokenHistory[i].TargetPlayerID != "" {
+				r.addAchievement(r.tokenHistory[i].TargetPlayerID, "First Blood")
+				break
+			}
+		}
+	}
+	// "Sherlock" — voted for the actual werewolf during VOTING
+	if winner == WinnerVillage && len(r.votes) > 0 {
+		for voterID, targetID := range r.votes {
+			if tp := r.players[targetID]; tp != nil && tp.Role == RoleWerewolf {
+				r.addAchievement(voterID, "Sherlock")
+			}
+		}
+	}
+	// "Howl at the Moon" — werewolf who voted for seer during WEREWOLF_GUESS and won
+	if winner == WinnerWerewolf {
+		for voterID, targetID := range r.votes {
+			voter := r.players[voterID]
+			target := r.players[targetID]
+			if voter != nil && voter.Role == RoleWerewolf && target != nil && target.Role == RoleSeer {
+				r.addAchievement(voterID, "Howl at the Moon")
+			}
+		}
+	}
+
+	// Sync achievements to player structs
+	for _, id := range r.order {
+		if p := r.players[id]; p != nil {
+			p.Achievements = r.achievements[id]
+		}
 	}
 
 	r.broadcastState()
@@ -903,6 +1115,8 @@ func (r *Room) handleResetGame(c *Client) {
 	r.tokensUsed = 0
 	r.winner = ""
 	r.votes = make(map[string]string)
+	r.hintsRevealed = 0
+	r.hintIndices = nil
 
 	for _, p := range r.players {
 		p.IsReady = p.IsBot // Bots stay ready
@@ -949,6 +1163,7 @@ func (r *Room) buildStateForPlayer(playerID string) GameState {
 		if p := r.players[id]; p != nil {
 			pc := *p
 			pc.Score = r.scores[id] // always sync persistent score
+			pc.Achievements = r.achievements[id]
 			if r.phase != PhaseGameOver && r.phase != PhaseLobby {
 				if id != playerID {
 					// Werewolves can see other werewolves
@@ -990,17 +1205,27 @@ func (r *Room) buildStateForPlayer(playerID string) GameState {
 		}
 	}
 
+	// Hints: show hint string to non-Mayor players
+	var hintString string
+	if thisPlayer != nil && !thisPlayer.IsMayor && r.hintsRevealed > 0 {
+		hintString = r.buildHintString()
+	}
+
 	return GameState{
-		Phase:         r.phase,
-		RoomCode:      r.code,
-		Players:       players,
-		SecretWord:    secretWord,
-		WordOptions:   wordOptions,
-		TimeRemaining: r.timeRemaining,
-		TokensUsed:    r.tokensUsed,
-		TokenHistory:  tokenHistory,
-		Guesses:       guesses,
-		Winner:        r.winner,
-		MyPlayerID:    playerID,
+		Phase:           r.phase,
+		RoomCode:        r.code,
+		Players:         players,
+		SecretWord:      secretWord,
+		SecretWordHints: hintString,
+		WordOptions:     wordOptions,
+		TimeRemaining:   r.timeRemaining,
+		TokensUsed:      r.tokensUsed,
+		TokenHistory:    tokenHistory,
+		Guesses:         guesses,
+		Winner:          r.winner,
+		MyPlayerID:      playerID,
+		Difficulty:      r.difficulty,
+		HintsRevealed:   r.hintsRevealed,
+		NumWerewolves:   r.getNumWerewolves(len(r.order)),
 	}
 }

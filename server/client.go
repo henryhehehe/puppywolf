@@ -184,6 +184,37 @@ func (c *Client) handleMessage(msg ClientMessage) {
 		}
 		c.room.handleResetGame(c)
 
+	case "SEND_REACTION":
+		if c.room == nil {
+			c.sendError("You are not in a room")
+			return
+		}
+		var payload SendReactionPayload
+		if err := json.Unmarshal(msg.Payload, &payload); err != nil {
+			c.sendError("Invalid SEND_REACTION payload")
+			return
+		}
+		c.room.handleSendReaction(c, payload)
+
+	case "REVEAL_HINT":
+		if c.room == nil {
+			c.sendError("You are not in a room")
+			return
+		}
+		c.room.handleRevealHint(c)
+
+	case "SET_DIFFICULTY":
+		if c.room == nil {
+			c.sendError("You are not in a room")
+			return
+		}
+		var payload SetDifficultyPayload
+		if err := json.Unmarshal(msg.Payload, &payload); err != nil {
+			c.sendError("Invalid SET_DIFFICULTY payload")
+			return
+		}
+		c.room.handleSetDifficulty(c, payload)
+
 	default:
 		c.sendError("Unknown message type: " + msg.Type)
 	}
@@ -200,6 +231,18 @@ func (c *Client) sendError(message string) {
 
 func (c *Client) sendState(state GameState) {
 	msg := ServerMessage{Type: "STATE_UPDATE", Payload: state}
+	data, err := json.Marshal(msg)
+	if err != nil {
+		return
+	}
+	select {
+	case c.send <- data:
+	default:
+	}
+}
+
+func (c *Client) sendReaction(reaction ReactionBroadcast) {
+	msg := ServerMessage{Type: "REACTION", Payload: reaction}
 	data, err := json.Marshal(msg)
 	if err != nil {
 		return

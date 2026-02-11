@@ -453,6 +453,135 @@ class AudioService {
     osc2.start(now + 0.3); osc2.stop(now + 0.45);
   }
 
+  // ── Loud playful bark (taunt / reaction) ──
+  playBark() {
+    if (this.isMuted) return;
+    const ctx = this.getContext();
+    const now = ctx.currentTime;
+    // Big "WOOF!" — low hit then mid bark
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'sawtooth';
+    osc1.frequency.setValueAtTime(180, now);
+    osc1.frequency.exponentialRampToValueAtTime(350, now + 0.04);
+    osc1.frequency.exponentialRampToValueAtTime(200, now + 0.12);
+    gain1.gain.setValueAtTime(0.12, now);
+    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+    osc1.connect(gain1); gain1.connect(ctx.destination);
+    osc1.start(now); osc1.stop(now + 0.18);
+    // Upper harmonic yip
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(600, now + 0.02);
+    osc2.frequency.exponentialRampToValueAtTime(900, now + 0.06);
+    osc2.frequency.exponentialRampToValueAtTime(500, now + 0.14);
+    gain2.gain.setValueAtTime(0.06, now + 0.02);
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+    osc2.connect(gain2); gain2.connect(ctx.destination);
+    osc2.start(now + 0.02); osc2.stop(now + 0.16);
+  }
+
+  // ── Victory dance celebration (ascending cheerful yips + fanfare) ──
+  playVictoryDance() {
+    if (this.isMuted) return;
+    const ctx = this.getContext();
+    const now = ctx.currentTime;
+    // Ascending cheerful yips with celebratory ending
+    const notes = [440, 554, 659, 880, 1047, 1319, 1568, 1760];
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = i < 6 ? 'sine' : 'triangle';
+      osc.frequency.setValueAtTime(freq, now + i * 0.09);
+      osc.frequency.exponentialRampToValueAtTime(freq * 1.15, now + i * 0.09 + 0.04);
+      gain.gain.setValueAtTime(0.06, now + i * 0.09);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.09 + 0.18);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(now + i * 0.09); osc.stop(now + i * 0.09 + 0.18);
+    });
+    // Final chord
+    [880, 1100, 1320].forEach((freq) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.04, now + 0.8);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(now + 0.8); osc.stop(now + 1.5);
+    });
+  }
+
+  // ── Sad defeat slouch (descending whine) ──
+  playDefeatSlouch() {
+    if (this.isMuted) return;
+    const ctx = this.getContext();
+    const now = ctx.currentTime;
+    const notes = [600, 500, 400, 300, 220, 180];
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now + i * 0.15);
+      osc.frequency.exponentialRampToValueAtTime(freq * 0.8, now + i * 0.15 + 0.12);
+      gain.gain.setValueAtTime(0.05, now + i * 0.15);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.15 + 0.25);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(now + i * 0.15); osc.stop(now + i * 0.15 + 0.25);
+    });
+  }
+
+  // ── Hint reveal sparkle ──
+  playHintReveal() {
+    if (this.isMuted) return;
+    const ctx = this.getContext();
+    const now = ctx.currentTime;
+    [1200, 1500, 1800].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.04, now + i * 0.08);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.2);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(now + i * 0.08); osc.stop(now + i * 0.08 + 0.2);
+    });
+  }
+
+  // ── Reaction pop (someone sent an emoji) ──
+  playReactionPop() {
+    if (this.isMuted) return;
+    const ctx = this.getContext();
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(1600, now);
+    osc.frequency.exponentialRampToValueAtTime(1200, now + 0.05);
+    gain.gain.setValueAtTime(0.04, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(now); osc.stop(now + 0.07);
+  }
+
+  // ── Night transition whoosh ──
+  playNightTransition() {
+    if (this.isMuted) return;
+    const ctx = this.getContext();
+    const now = ctx.currentTime;
+    // Low whoosh
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(100, now);
+    osc.frequency.exponentialRampToValueAtTime(60, now + 0.8);
+    gain.gain.setValueAtTime(0.06, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 1.0);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(now); osc.stop(now + 1.0);
+  }
+
   // ── Word chosen by mayor (magical sparkle) ──
   playWordChosen() {
     if (this.isMuted) return;

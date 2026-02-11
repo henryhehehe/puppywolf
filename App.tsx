@@ -1,13 +1,33 @@
 import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
-import { GamePhase, GameState, TokenType, Role, RoomInfo } from './types';
+import { GamePhase, GameState, TokenType, Role, RoomInfo, Difficulty, ReactionEvent } from './types';
 import { gameService } from './services/game';
 import { audioService } from './services/audioService';
 import { RoleCard } from './components/ui/RoleCard';
 import { GameBoard } from './components/GameBoard';
 import { PlayerCircle } from './components/PlayerCircle';
 import { VillageScene } from './components/VillageScene';
-import { Crown, ArrowRight, RefreshCw, Trophy, Eye, Search, Moon, Sparkles, Volume2, VolumeX, Users, Plus, Bot, Medal, Star, PawPrint } from './utils/icons';
+import { Crown, ArrowRight, RefreshCw, Trophy, Eye, Search, Moon, Sparkles, Volume2, VolumeX, Users, Plus, Bot, Medal, Star, PawPrint, Clock } from './utils/icons';
 import { getPuppyAvatarUrl, getPuppySvgMarkup, PUPPY_BREED_NAMES, BREED_LABELS, getBreedEarType, getBreedHasTongue } from './utils/puppyAvatar';
+
+// ─── Reaction emojis available ──────────────────────────────────────
+const REACTION_EMOJIS = ['🤨', '😂', '😱', '🤔', '❤️', '🐾', '🐺', '🦴'];
+
+// ─── Achievement display config ─────────────────────────────────────
+const ACHIEVEMENT_CONFIG: Record<string, { icon: string; label: string }> = {
+  'First Blood': { icon: '🎯', label: 'First Blood' },
+  'Sherlock': { icon: '🔍', label: 'Sherlock' },
+  'Master of Disguise': { icon: '🎭', label: 'Master of Disguise' },
+  'Pack Leader': { icon: '👑', label: 'Pack Leader' },
+  'Eagle Eye': { icon: '🦅', label: 'Eagle Eye' },
+  'Howl at the Moon': { icon: '🌙', label: 'Howl at the Moon' },
+};
+
+// ─── Difficulty labels ──────────────────────────────────────────────
+const DIFFICULTY_CONFIG: Record<Difficulty, { label: string; emoji: string; color: string }> = {
+  EASY: { label: 'Puppy', emoji: '🐶', color: 'from-green-500 to-emerald-500' },
+  MEDIUM: { label: 'Good Boy', emoji: '🐕', color: 'from-amber-500 to-orange-500' },
+  HARD: { label: 'Alpha Wolf', emoji: '🐺', color: 'from-red-500 to-pink-500' },
+};
 
 // ─── Avatar options (puppy breeds!) ─────────────────────────────────────
 const AVATAR_SEEDS = PUPPY_BREED_NAMES;
@@ -118,6 +138,53 @@ const MysticalParticles = () => {
   );
 };
 
+// ─── Floating Reactions Display ──────────────────────────────────────
+const FloatingReaction: React.FC<{ emoji: string; x: number; y: number; id: number }> = ({ emoji, x, y, id }) => (
+  <div
+    key={id}
+    className="fixed z-[60] pointer-events-none animate-reaction-float text-3xl"
+    style={{ left: x, top: y, transform: 'translate(-50%, 0)' }}
+  >
+    {emoji === 'BARK' ? '🔊' : emoji}
+  </div>
+);
+
+// ─── Reaction Picker Bar ────────────────────────────────────────────
+const ReactionBar: React.FC<{ onReaction: (emoji: string) => void }> = ({ onReaction }) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="fixed bottom-4 left-4 z-50 flex items-end gap-2">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-10 h-10 rounded-full bg-slate-800/80 backdrop-blur-sm border border-slate-700/50 flex items-center justify-center text-lg hover:scale-110 transition-all shadow-lg"
+        title="Reactions"
+      >
+        😄
+      </button>
+      {open && (
+        <div className="flex gap-1.5 bg-slate-900/90 backdrop-blur-xl rounded-2xl px-3 py-2 border border-slate-700/50 shadow-xl animate-fade-in-up">
+          {REACTION_EMOJIS.map((emoji) => (
+            <button
+              key={emoji}
+              onClick={() => { onReaction(emoji); audioService.playClick(); }}
+              className="text-xl hover:scale-125 transition-transform p-1"
+            >
+              {emoji}
+            </button>
+          ))}
+          <div className="w-px bg-slate-700/50 mx-1" />
+          <button
+            onClick={() => { onReaction('BARK'); audioService.playBark(); }}
+            className="text-sm px-2.5 py-1 bg-amber-500/20 text-amber-400 rounded-full font-bold hover:bg-amber-500/30 transition-all"
+          >
+            BARK!
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ─── Mute button ───────────────────────────────────────────────────────
 const MuteButton = () => {
   const [muted, setMuted] = useState(audioService.muted);
@@ -210,6 +277,9 @@ const App = () => {
   const [hasVoted, setHasVoted] = useState(false);
   const [rooms, setRooms] = useState<RoomInfo[]>([]);
   const [showRoomBrowser, setShowRoomBrowser] = useState(false);
+  const [floatingReactions, setFloatingReactions] = useState<{id: number; emoji: string; x: number; y: number}[]>([]);
+  const nextReactionId = useRef(0);
+  const [showReplay, setShowReplay] = useState(false);
 
   const prevPhaseRef = useRef(gameState.phase);
   const prevTokenCountRef = useRef(0);
@@ -220,7 +290,21 @@ const App = () => {
   useEffect(() => {
     const unsub = gameService.subscribe(setGameState);
     const unsubRooms = gameService.onRoomList(setRooms);
-    return () => { unsub(); unsubRooms(); };
+    const unsubReaction = gameService.onReaction((reaction: ReactionEvent) => {
+      // Play sound for reactions
+      if (reaction.emoji === 'BARK') {
+        audioService.playBark();
+      } else {
+        audioService.playReactionPop();
+      }
+      // Show floating reaction at a random-ish position near center
+      const x = window.innerWidth * 0.3 + Math.random() * window.innerWidth * 0.4;
+      const y = window.innerHeight * 0.3 + Math.random() * window.innerHeight * 0.2;
+      const id = nextReactionId.current++;
+      setFloatingReactions(prev => [...prev.slice(-8), { id, emoji: reaction.emoji, x, y }]);
+      setTimeout(() => setFloatingReactions(prev => prev.filter(r => r.id !== id)), 2000);
+    });
+    return () => { unsub(); unsubRooms(); unsubReaction(); };
   }, []);
 
   // ── Refresh room list on LOGIN ──
@@ -259,8 +343,8 @@ const App = () => {
         case GamePhase.VOTING: audioService.playWarning(); break;
         case GamePhase.WEREWOLF_GUESS: audioService.playHowl(); break;
         case GamePhase.GAME_OVER:
-          if (gameState.winner === 'VILLAGE') audioService.playSuccess();
-          else audioService.playDefeat();
+          if (gameState.winner === 'VILLAGE') audioService.playVictoryDance();
+          else audioService.playDefeatSlouch();
           break;
       }
       prevPhaseRef.current = curr;
@@ -307,6 +391,10 @@ const App = () => {
     }
   }, [hasVoted, gameState.myPlayerId]);
 
+  const handleSendReaction = useCallback((emoji: string) => {
+    gameService.sendReaction(emoji);
+  }, []);
+
   // ── Derived state ──
   const myPlayer = gameState.players.find(p => p.id === gameState.myPlayerId);
 
@@ -315,10 +403,16 @@ const App = () => {
       case GamePhase.DAY_PHASE: return 'dusk' as const;
       case GamePhase.VOTING: return 'red' as const;
       case GamePhase.WEREWOLF_GUESS: return 'purple' as const;
-      case GamePhase.GAME_OVER: return (gameState.winner === 'VILLAGE' ? 'green' : 'red') as const;
+      case GamePhase.GAME_OVER: return gameState.winner === 'VILLAGE' ? 'green' as const : 'red' as const;
       default: return 'night' as const;
     }
   }, [gameState.phase, gameState.winner]);
+
+  const isNightPhase = gameState.phase === GamePhase.ROLE_REVEAL ||
+    gameState.phase === GamePhase.WEREWOLF_GUESS ||
+    gameState.phase === GamePhase.WORD_SELECTION;
+
+  const isDayPhase = gameState.phase === GamePhase.DAY_PHASE;
 
   const isVillageWin = gameState.winner === 'VILLAGE';
   const iWon = myPlayer
@@ -353,6 +447,21 @@ const App = () => {
       <PawCursorTrail />
       {showPhaseFlash && <PhaseFlash color={phaseFlashColor} />}
       {gameState.phase === GamePhase.GAME_OVER && <Confetti variant={iWon ? 'gold' : 'silver'} />}
+
+      {/* Night/Day overlay transitions */}
+      {isNightPhase && <div className="night-overlay" />}
+      {isDayPhase && <div className="day-overlay" />}
+
+      {/* Floating reactions */}
+      {floatingReactions.map(r => (
+        <FloatingReaction key={r.id} id={r.id} emoji={r.emoji} x={r.x} y={r.y} />
+      ))}
+
+      {/* Reaction bar — visible during active game phases */}
+      {(gameState.phase === GamePhase.DAY_PHASE || gameState.phase === GamePhase.VOTING ||
+        gameState.phase === GamePhase.WEREWOLF_GUESS || gameState.phase === GamePhase.LOBBY) && (
+        <ReactionBar onReaction={handleSendReaction} />
+      )}
 
       {/* Timer urgency vignette */}
       {gameState.phase === GamePhase.DAY_PHASE && gameState.timeRemaining <= 10 && gameState.timeRemaining > 0 && (
@@ -647,6 +756,19 @@ const App = () => {
                             </span>
                           )}
                         </div>
+                        {/* Achievement badges */}
+                        {player.achievements && player.achievements.length > 0 && (
+                          <div className="flex gap-0.5 mt-0.5 flex-wrap justify-center">
+                            {player.achievements.slice(0, 3).map((a) => {
+                              const cfg = ACHIEVEMENT_CONFIG[a];
+                              return cfg ? (
+                                <span key={a} className="text-[9px] animate-badge-glow rounded-full bg-slate-800/80 px-1 py-0.5 border border-amber-500/20" title={cfg.label}>
+                                  {cfg.icon}
+                                </span>
+                              ) : null;
+                            })}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -685,6 +807,39 @@ const App = () => {
                   <Scoreboard players={gameState.players} myPlayerId={gameState.myPlayerId} />
                 </div>
               )}
+
+              {/* ── Difficulty Selector ── */}
+              <div className="w-full bg-slate-900/40 backdrop-blur-md rounded-2xl border border-slate-700/30 p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles size={12} className="text-amber-400/60" />
+                  <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Difficulty</span>
+                </div>
+                <div className="flex gap-2">
+                  {(['EASY', 'MEDIUM', 'HARD'] as Difficulty[]).map((diff) => {
+                    const cfg = DIFFICULTY_CONFIG[diff];
+                    const isActive = gameState.difficulty === diff;
+                    return (
+                      <button
+                        key={diff}
+                        onClick={() => { gameService.setDifficulty(diff); audioService.playClick(); }}
+                        className={`flex-1 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                          isActive
+                            ? `bg-gradient-to-r ${cfg.color} text-white shadow-lg`
+                            : 'bg-slate-800/50 text-slate-500 hover:text-slate-300 border border-slate-700/30'
+                        }`}
+                      >
+                        <span>{cfg.emoji}</span> {cfg.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {/* Werewolf count info */}
+                <div className="mt-2 text-center">
+                  <span className="text-[10px] text-slate-500">
+                    🐺 {gameState.numWerewolves || 1} werewolf pup{(gameState.numWerewolves || 1) > 1 ? 's' : ''} will be among you
+                  </span>
+                </div>
+              </div>
 
               {/* ── Action Buttons ── */}
               <div className="w-full flex flex-col gap-3">
@@ -963,6 +1118,20 @@ const App = () => {
         const sortedPlayers = [...gameState.players].sort((a, b) => b.score - a.score);
         const mvpPlayer = sortedPlayers[0];
         const mvpIsMeaningful = mvpPlayer && mvpPlayer.score > 0;
+
+        // Build replay timeline
+        const replayEvents: { time: number; type: 'guess' | 'token'; player: string; detail: string }[] = [];
+        (gameState.guesses || []).forEach(g => {
+          const p = gameState.players.find(pl => pl.id === g.playerId);
+          replayEvents.push({ time: g.timestamp, type: 'guess', player: p?.name || '?', detail: `guessed "${g.text}"` });
+        });
+        (gameState.tokenHistory || []).forEach(t => {
+          const target = gameState.players.find(pl => pl.id === t.targetPlayerId);
+          replayEvents.push({ time: t.timestamp, type: 'token', player: target?.name || '?', detail: `received ${t.type} token` });
+        });
+        replayEvents.sort((a, b) => a.time - b.time);
+        const firstTime = replayEvents[0]?.time || 0;
+
         return (
           <div className="min-h-screen flex items-center justify-center p-4 relative z-10">
             <div className="max-w-lg w-full">
@@ -1000,7 +1169,7 @@ const App = () => {
                 {mvpIsMeaningful && (
                   <div className="mb-4 animate-role-reveal" style={{ animationDelay: '0.3s' }}>
                     <div className="inline-flex items-center gap-3 px-4 py-2 bg-amber-500/10 border border-amber-500/25 rounded-2xl">
-                      <img src={mvpPlayer.avatarUrl} alt={mvpPlayer.name} className="w-10 h-10 rounded-full border-2 border-amber-400 shadow-lg" />
+                      <img src={mvpPlayer.avatarUrl} alt={mvpPlayer.name} className="w-10 h-10 rounded-full border-2 border-amber-400 shadow-lg animate-victory-dance" />
                       <div className="text-left">
                         <p className="text-[10px] uppercase tracking-widest mvp-badge font-bold">MVP</p>
                         <p className="text-amber-300 text-sm font-bold">{mvpPlayer.name}</p>
@@ -1013,7 +1182,7 @@ const App = () => {
                   </div>
                 )}
 
-                {/* Player role reveals — staggered dramatic */}
+                {/* Player role reveals — with victory dance / defeat slouch */}
                 <div className="space-y-2 mb-5">
                   {sortedPlayers.map((p, idx) => {
                     const wonThisRound = isVillageWin ? p.role !== 'WEREWOLF' : p.role === 'WEREWOLF';
@@ -1032,8 +1201,8 @@ const App = () => {
                             : <span className="text-[10px] text-slate-600 font-mono">{idx + 1}</span>}
                         </div>
 
-                        {/* Avatar with role-colored border */}
-                        <div className="relative">
+                        {/* Avatar with victory dance / defeat slouch */}
+                        <div className={`relative ${wonThisRound ? 'animate-victory-dance' : 'animate-defeat-slouch'}`} style={{ animationDelay: `${0.8 + idx * 0.15}s` }}>
                           <img
                             src={p.avatarUrl}
                             alt={p.name}
@@ -1064,6 +1233,19 @@ const App = () => {
                               <span className="text-[9px] text-red-400 bg-red-900/30 px-1.5 py-0.5 rounded-full">{p.votesReceived} vote{(p.votesReceived || 0) > 1 ? 's' : ''}</span>
                             )}
                           </div>
+                          {/* Achievements */}
+                          {p.achievements && p.achievements.length > 0 && (
+                            <div className="flex gap-1 mt-1 flex-wrap">
+                              {p.achievements.map((a) => {
+                                const cfg = ACHIEVEMENT_CONFIG[a];
+                                return cfg ? (
+                                  <span key={a} className="text-[8px] bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full px-1.5 py-0.5 flex items-center gap-0.5">
+                                    {cfg.icon} {cfg.label}
+                                  </span>
+                                ) : null;
+                              })}
+                            </div>
+                          )}
                         </div>
 
                         {/* Score */}
@@ -1081,8 +1263,44 @@ const App = () => {
                   })}
                 </div>
 
+                {/* Replay Timeline */}
+                {replayEvents.length > 0 && (
+                  <div className="mb-5">
+                    <button
+                      onClick={() => setShowReplay(!showReplay)}
+                      className="text-xs text-slate-400 hover:text-slate-200 transition-colors flex items-center gap-1.5 mx-auto mb-2"
+                    >
+                      <Clock size={12} />
+                      {showReplay ? 'Hide' : 'Show'} Game Replay
+                      <span className={`transition-transform ${showReplay ? 'rotate-180' : ''}`}>▼</span>
+                    </button>
+                    {showReplay && (
+                      <div className="bg-slate-800/40 rounded-xl border border-slate-700/30 p-3 max-h-48 overflow-y-auto text-left space-y-1.5">
+                        {replayEvents.map((evt, idx) => (
+                          <div
+                            key={idx}
+                            className="flex items-center gap-2 animate-timeline-slide"
+                            style={{ animationDelay: `${idx * 50}ms` }}
+                          >
+                            <span className="text-[9px] text-slate-600 font-mono w-12 shrink-0 text-right">
+                              {Math.round((evt.time - firstTime) / 1000)}s
+                            </span>
+                            <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                              evt.type === 'guess' ? 'bg-sky-400' : evt.detail.includes('CORRECT') ? 'bg-emerald-400' : 'bg-amber-400'
+                            }`} />
+                            <span className="text-[10px] text-slate-300">
+                              <span className="font-semibold">{evt.player}</span>
+                              {' '}{evt.detail}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <button
-                  onClick={() => gameService.resetGame()}
+                  onClick={() => { gameService.resetGame(); setShowReplay(false); }}
                   className="inline-flex items-center gap-2 px-10 py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-900 rounded-xl font-bold text-base hover:from-amber-400 hover:to-orange-400 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-amber-500/25"
                 >
                   <RefreshCw size={18} /> Play Again

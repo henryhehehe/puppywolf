@@ -4,6 +4,7 @@ import { Token } from './ui/Token';
 import { Clock, Crown, Sun, Send, MessageCircle, Eye, Shield, Skull } from '../utils/icons';
 import { TOKEN_CONFIG } from '../constants';
 import { audioService } from '../services/audioService';
+import { gameService } from '../services/game';
 
 interface GameBoardProps {
   state: GameState;
@@ -67,6 +68,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ state, onTokenClick, onSub
   const mayorPlayer = state.players.find(p => p.isMayor);
   const nonMayorPlayers = state.players.filter(p => !p.isMayor);
   const roleInstruction = getRoleInstruction(myRole as string, !!isMayor);
+  const maxHints = state.secretWord ? Math.floor(state.secretWord.length / 2) : 0;
 
   const [selectedToken, setSelectedToken] = useState<TokenType | null>(null);
   const [guessText, setGuessText] = useState('');
@@ -121,6 +123,34 @@ export const GameBoard: React.FC<GameBoardProps> = ({ state, onTokenClick, onSub
     });
     return map;
   }, [state.guesses]);
+
+  // Compute mood per player based on their latest token
+  const moodMap = useMemo(() => {
+    const map = new Map<string, string>();
+    // For each player, find their latest token
+    state.tokenHistory.forEach(t => {
+      if (!t.targetPlayerId) return;
+      // Latest token is first in the array (prepended)
+      if (!map.has(t.targetPlayerId)) {
+        switch (t.type) {
+          case 'YES':
+          case 'CORRECT':
+            map.set(t.targetPlayerId, 'happy');
+            break;
+          case 'SO_CLOSE':
+            map.set(t.targetPlayerId, 'excited');
+            break;
+          case 'WAY_OFF':
+            map.set(t.targetPlayerId, 'confused');
+            break;
+          case 'NO':
+            map.set(t.targetPlayerId, 'sad');
+            break;
+        }
+      }
+    });
+    return map;
+  }, [state.tokenHistory]);
 
   // Mayor: select a token, then tap a player to assign it
   const handleSelectToken = (type: TokenType) => {
@@ -182,10 +212,23 @@ export const GameBoard: React.FC<GameBoardProps> = ({ state, onTokenClick, onSub
           </span>
         </div>
 
-        {/* Secret Word */}
+        {/* Secret Word / Hints */}
         <div className="text-center flex-1 mx-3">
           {(isMayor || myPlayer?.role === 'WEREWOLF' || myPlayer?.role === 'SEER') ? (
-            <p className="text-base sm:text-lg font-serif font-bold text-amber-400 truncate">{state.secretWord}</p>
+            <div className="flex items-center justify-center gap-2">
+              <p className="text-base sm:text-lg font-serif font-bold text-amber-400 truncate">{state.secretWord}</p>
+              {isMayor && state.hintsRevealed < maxHints && (
+                <button
+                  onClick={() => { gameService.revealHint(); audioService.playClick(); }}
+                  className="text-[9px] px-2 py-0.5 bg-indigo-500/20 text-indigo-300 rounded-full border border-indigo-500/30 hover:bg-indigo-500/30 transition-all shrink-0"
+                  title={`Reveal a letter hint (${state.hintsRevealed}/${maxHints} used, costs 1 score)`}
+                >
+                  💡 Hint ({maxHints - state.hintsRevealed})
+                </button>
+              )}
+            </div>
+          ) : state.secretWordHints ? (
+            <p className="text-base sm:text-lg font-mono font-bold text-indigo-300 tracking-wider">{state.secretWordHints}</p>
           ) : (
             <p className="text-base sm:text-lg font-serif font-bold text-slate-600">? ? ? ? ?</p>
           )}
@@ -251,6 +294,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ state, onTokenClick, onSub
             const guess = guessMap.get(player.id);
             const isNewGuess = newGuessIds.has(player.id);
             const isTargetable = isMayor && selectedToken !== null && !isMe;
+            const mood = moodMap.get(player.id);
+            const moodClass = mood === 'happy' ? 'animate-mood-happy' : mood === 'excited' ? 'animate-mood-excited' : mood === 'confused' ? 'animate-mood-confused' : mood === 'sad' ? 'animate-mood-sad' : '';
 
             return (
               <div
@@ -264,7 +309,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ state, onTokenClick, onSub
                 }}
                 onClick={() => isTargetable && handleAssignToken(player.id)}
               >
-                <div className="flex flex-col items-center relative">
+                <div className={`flex flex-col items-center relative ${moodClass}`}>
                   {/* Speech bubble for guess */}
                   {guess && <SpeechBubble text={guess.text} isNew={isNewGuess} />}
 

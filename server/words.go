@@ -2,149 +2,154 @@ package main
 
 import "math/rand"
 
-// wordList contains a large curated set of nouns for WerePups.
-// ~500 words across many categories for high replayability.
-var wordList = []string{
-	// ── Animals ──
-	"Cat", "Dog", "Elephant", "Penguin", "Dolphin", "Eagle", "Tiger", "Bear",
-	"Rabbit", "Owl", "Whale", "Shark", "Butterfly", "Fox", "Wolf", "Parrot",
-	"Octopus", "Giraffe", "Kangaroo", "Turtle", "Hamster", "Panda", "Flamingo",
-	"Chameleon", "Jellyfish", "Seahorse", "Koala", "Hedgehog", "Otter", "Peacock",
-	"Sloth", "Cheetah", "Gorilla", "Hummingbird", "Lobster", "Bat", "Moose",
-	"Crab", "Falcon", "Swan", "Deer", "Raccoon", "Squirrel", "Frog", "Alpaca",
-	"Puppy", "Kitten", "Duckling", "Lamb", "Piglet",
-
-	// ── Food & Drink ──
-	"Pizza", "Chocolate", "Coffee", "Banana", "Sushi", "Bread", "Honey",
-	"Cheese", "Watermelon", "Pancake", "Burger", "Taco", "Pasta", "Cookie",
-	"Lemonade", "Popcorn", "Avocado", "Strawberry", "Donut", "Waffle",
-	"Pretzel", "Mango", "Cinnamon", "Milkshake", "Pineapple", "Cupcake",
-	"Marshmallow", "Noodle", "Pickle", "Smoothie", "Croissant", "Bubbletea",
-	"Dumpling", "Ramen", "Muffin", "Gummy", "Caramel", "Coconut",
-	"Cheesecake", "Macaron", "Brownie", "Corndog", "Nachos",
-
-	// ── Nature ──
-	"Mountain", "Ocean", "Forest", "Desert", "Volcano", "Glacier", "Rainbow",
-	"Thunder", "Sunset", "Waterfall", "Island", "River", "Cave", "Meadow",
-	"Coral", "Canyon", "Aurora", "Tornado", "Blizzard", "Tsunami",
-	"Avalanche", "Eclipse", "Geyser", "Lagoon", "Jungle", "Savanna",
-	"Oasis", "Tundra", "Reef", "Swamp", "Pebble", "Dune", "Fog",
-	"Lightning", "Hailstone", "Tide", "Cliff", "Valley", "Spring",
-	"Creek", "Glacier", "Fjord", "Marsh", "Prairie",
-
-	// ── Space & Science ──
-	"Galaxy", "Asteroid", "Nebula", "Comet", "Planet", "Satellite",
-	"Blackhole", "Constellation", "Supernova", "Orbit", "Telescope",
-	"Meteor", "Gravity", "Atom", "Molecule", "Magnet", "Prism",
-	"Spectrum", "Electron", "Neutron", "Proton", "Photon", "Laser",
-	"Radar", "Fossil", "Dinosaur", "Bacteria", "Virus", "DNA",
-	"Chromosome", "Crystal", "Mineral", "Element",
-
-	// ── Objects & Things ──
-	"Mirror", "Castle", "Bridge", "Clock", "Compass", "Lantern",
-	"Treasure", "Crown", "Shield", "Sword", "Key", "Bell", "Candle",
-	"Umbrella", "Backpack", "Ladder", "Anchor", "Balloon", "Whistle",
-	"Feather", "Pillow", "Blanket", "Hammock", "Trampoline", "Kite",
-	"Boomerang", "Slingshot", "Hourglass", "Kaleidoscope", "Pendulum",
-	"Trophy", "Medal", "Stamp", "Envelope", "Postcard", "Bookmark",
-	"Puzzle", "Dice", "Marble", "Yo-yo", "Pinwheel", "Snowglobe",
-	"Locket", "Ring", "Bracelet", "Necklace", "Tiara", "Wand",
-
-	// ── Places ──
-	"Library", "Hospital", "Airport", "Museum", "Lighthouse", "Stadium",
-	"Temple", "Palace", "Prison", "Pharmacy", "Theater", "Aquarium",
-	"Cathedral", "Warehouse", "Carnival", "Bakery", "Greenhouse",
-	"Observatory", "Treehouse", "Igloo", "Cottage", "Mansion", "Dungeon",
-	"Tower", "Fortress", "Chapel", "Marketplace", "Garden", "Playground",
-	"Beach", "Pier", "Harbor", "Vineyard", "Ranch", "Barn",
-	"Cabin", "Lodge", "Resort", "Spa", "Casino", "Arena",
-
-	// ── Professions & People ──
-	"Astronaut", "Detective", "Pirate", "Wizard", "Knight", "Chef",
-	"Pilot", "Architect", "Inventor", "Explorer", "Ninja", "Samurai",
-	"Doctor", "Firefighter", "Teacher", "Artist", "Musician", "Dancer",
-	"Farmer", "Fisherman", "Blacksmith", "Carpenter", "Sailor", "Ranger",
-	"Jester", "King", "Queen", "Prince", "Princess", "Monk",
-	"Gladiator", "Viking", "Cowboy", "Sheriff", "Magician", "Clown",
-	"Mermaid", "Fairy", "Elf", "Dwarf", "Dragon", "Unicorn",
-
-	// ── Sports & Games ──
-	"Soccer", "Basketball", "Tennis", "Swimming", "Skateboard", "Surfing",
-	"Archery", "Boxing", "Fencing", "Golf", "Hockey", "Volleyball",
-	"Bowling", "Darts", "Chess", "Poker", "Dominoes", "Frisbee",
-	"Marathon", "Relay", "Diving", "Gymnastics", "Wrestling", "Karate",
-	"Skiing", "Snowboard", "Kayak", "Canoe", "Trampoline",
-
-	// ── Music & Art ──
-	"Guitar", "Piano", "Violin", "Drums", "Trumpet", "Flute",
-	"Harmonica", "Saxophone", "Harp", "Banjo", "Ukulele", "Accordion",
-	"Paintbrush", "Canvas", "Sculpture", "Origami", "Mosaic", "Graffiti",
-	"Symphony", "Melody", "Rhythm", "Chorus", "Opera", "Ballet",
-
-	// ── Technology & Transport ──
-	"Submarine", "Spaceship", "Bicycle", "Helicopter", "Robot", "Camera",
-	"Microphone", "Firework", "Parachute", "Keyboard", "Headphones",
-	"Projector", "Antenna", "Battery", "Engine", "Propeller", "Radar",
-	"Rocket", "Sailboat", "Trolley", "Gondola", "Zeppelin", "Hovercraft",
-	"Bulldozer", "Crane", "Forklift", "Tractor", "Ambulance",
-
-	// ── Clothing & Fashion ──
-	"Sneaker", "Bowtie", "Scarf", "Mittens", "Helmet", "Cape",
-	"Goggles", "Apron", "Bandana", "Beret", "Fedora", "Sombrero",
-	"Sandals", "Boots", "Tutu", "Kimono", "Poncho", "Vest",
-
-	// ── Concepts & Abstract ──
-	"Shadow", "Dream", "Silence", "Echo", "Fortune", "Mystery",
-	"Freedom", "Harmony", "Wisdom", "Courage", "Illusion", "Memory",
-	"Balance", "Patience", "Curiosity", "Kindness", "Nostalgia",
-	"Serenity", "Adventure", "Destiny", "Legend", "Secret",
-	"Riddle", "Paradox", "Miracle", "Chaos", "Peace", "Hope",
-	"Joy", "Laughter", "Friendship", "Journey", "Promise", "Wish",
-
-	// ── Holidays & Celebrations ──
-	"Birthday", "Halloween", "Christmas", "Fireworks", "Parade",
-	"Festival", "Wedding", "Costume", "Pumpkin", "Snowman", "Ornament",
-	"Wreath", "Confetti", "Sparkler", "Piñata", "Lantern", "Gift",
-
-	// ── Weather & Seasons ──
-	"Sunshine", "Raindrop", "Snowflake", "Breeze", "Storm", "Frost",
-	"Icicle", "Dewdrop", "Mist", "Sleet", "Humidity", "Drought",
-
-	// ── Around the House ──
-	"Doorbell", "Chimney", "Staircase", "Bathtub", "Chandelier",
-	"Fireplace", "Bookshelf", "Windowsill", "Mailbox", "Doorknob",
-	"Curtain", "Carpet", "Cupboard", "Drawer", "Pantry",
-	"Flowerpot", "Birdhouse", "Treehouse", "Fountain", "Gazebo",
-
-	// ── Mythical & Fantasy ──
-	"Phoenix", "Griffin", "Centaur", "Pegasus", "Minotaur",
-	"Kraken", "Hydra", "Sphinx", "Werewolf", "Vampire",
-	"Zombie", "Ghost", "Goblin", "Troll", "Ogre", "Cyclops",
-	"Basilisk", "Chimera", "Banshee", "Leprechaun",
-
-	// ── Body & Health ──
-	"Skeleton", "Heartbeat", "Muscle", "Fingerprint", "Backbone",
-	"Eyelash", "Dimple", "Freckle", "Knuckle", "Elbow",
-
-	// ── Colors & Patterns ──
-	"Polkadot", "Stripe", "Plaid", "Camouflage", "Zigzag",
-	"Checkerboard", "Gradient", "Silhouette", "Stencil", "Mosaic",
+// Words categorized by difficulty.
+var easyWords = []string{
+	// Common animals
+	"Cat", "Dog", "Fish", "Bird", "Bear", "Frog", "Cow", "Pig", "Duck", "Owl",
+	"Rabbit", "Tiger", "Lion", "Horse", "Sheep", "Puppy", "Kitten", "Deer",
+	// Common food
+	"Pizza", "Bread", "Cheese", "Cookie", "Banana", "Apple", "Candy", "Cake",
+	"Pasta", "Burger", "Taco", "Donut", "Honey", "Egg", "Milk", "Rice",
+	// Common objects
+	"Ball", "Book", "Chair", "Door", "Clock", "Bell", "Key", "Lamp",
+	"Bed", "Cup", "Hat", "Shoe", "Bag", "Kite", "Box", "Ring",
+	// Simple nature
+	"Sun", "Moon", "Star", "Tree", "Rain", "Snow", "Wind", "Fire",
+	"River", "Beach", "Cloud", "Flower", "Rock", "Sand", "Leaf", "Grass",
+	// Simple places
+	"School", "House", "Park", "Farm", "Garden", "Beach", "Shop", "Zoo",
+	// Simple concepts
+	"Dream", "Love", "Hope", "Joy", "Fun", "Play", "Song", "Gift",
 }
 
-// getRandomWord returns a random word from the word list.
+var mediumWords = []string{
+	// Animals
+	"Elephant", "Penguin", "Dolphin", "Eagle", "Butterfly", "Fox", "Wolf",
+	"Parrot", "Octopus", "Giraffe", "Kangaroo", "Turtle", "Hamster", "Panda",
+	"Flamingo", "Jellyfish", "Seahorse", "Koala", "Hedgehog", "Otter", "Peacock",
+	"Cheetah", "Gorilla", "Hummingbird", "Lobster", "Raccoon", "Squirrel", "Alpaca",
+	// Food
+	"Chocolate", "Coffee", "Sushi", "Watermelon", "Pancake", "Popcorn", "Avocado",
+	"Strawberry", "Waffle", "Pretzel", "Mango", "Cinnamon", "Milkshake", "Pineapple",
+	"Cupcake", "Marshmallow", "Noodle", "Pickle", "Smoothie", "Croissant", "Dumpling",
+	"Ramen", "Muffin", "Caramel", "Coconut", "Cheesecake", "Macaron", "Nachos",
+	// Nature
+	"Mountain", "Ocean", "Forest", "Desert", "Volcano", "Rainbow", "Thunder",
+	"Sunset", "Waterfall", "Island", "Cave", "Meadow", "Canyon", "Tornado",
+	"Lightning", "Valley", "Glacier", "Jungle",
+	// Objects
+	"Mirror", "Castle", "Bridge", "Compass", "Lantern", "Treasure", "Crown",
+	"Shield", "Sword", "Umbrella", "Backpack", "Ladder", "Anchor", "Balloon",
+	"Whistle", "Feather", "Pillow", "Hammock", "Kite", "Boomerang", "Hourglass",
+	"Trophy", "Medal", "Puzzle", "Dice", "Yo-yo", "Snowglobe", "Wand",
+	// Places
+	"Library", "Museum", "Lighthouse", "Stadium", "Temple", "Palace", "Theater",
+	"Aquarium", "Bakery", "Greenhouse", "Treehouse", "Igloo", "Cottage", "Mansion",
+	"Tower", "Fortress", "Playground", "Pier", "Harbor", "Barn", "Cabin",
+	// Professions
+	"Astronaut", "Detective", "Pirate", "Wizard", "Knight", "Chef", "Pilot",
+	"Ninja", "Samurai", "Doctor", "Firefighter", "Artist", "Musician", "Dancer",
+	"Cowboy", "Magician", "Mermaid", "Fairy",
+	// Sports
+	"Soccer", "Basketball", "Tennis", "Skateboard", "Surfing", "Archery", "Boxing",
+	"Golf", "Hockey", "Volleyball", "Bowling", "Chess", "Frisbee", "Gymnastics",
+	// Music & Art
+	"Guitar", "Piano", "Violin", "Drums", "Trumpet", "Flute", "Origami",
+	// Technology
+	"Submarine", "Spaceship", "Bicycle", "Helicopter", "Robot", "Camera", "Rocket",
+	// Clothing
+	"Sneaker", "Scarf", "Helmet", "Cape", "Goggles", "Boots",
+	// Holidays
+	"Birthday", "Halloween", "Christmas", "Fireworks", "Parade", "Festival", "Costume",
+	"Pumpkin", "Snowman", "Confetti",
+}
+
+var hardWords = []string{
+	// Rare animals
+	"Chameleon", "Sloth", "Moose", "Falcon", "Swan", "Duckling", "Piglet", "Crab",
+	// Abstract/complex food
+	"Bubbletea", "Gummy", "Brownie", "Corndog", "Lemonade",
+	// Complex nature
+	"Glacier", "Coral", "Aurora", "Blizzard", "Tsunami", "Avalanche", "Eclipse",
+	"Geyser", "Lagoon", "Savanna", "Oasis", "Tundra", "Reef", "Swamp",
+	"Fjord", "Marsh", "Prairie", "Hailstone",
+	// Space
+	"Galaxy", "Asteroid", "Nebula", "Comet", "Satellite", "Blackhole", "Constellation",
+	"Supernova", "Orbit", "Telescope", "Meteor", "Gravity", "Molecule", "Prism",
+	"Spectrum", "Electron", "Photon", "Laser", "Fossil", "Dinosaur", "Chromosome",
+	"Crystal", "Mineral",
+	// Complex objects
+	"Kaleidoscope", "Pendulum", "Pinwheel", "Locket", "Bracelet", "Necklace", "Tiara",
+	// Concepts
+	"Shadow", "Silence", "Echo", "Fortune", "Mystery", "Freedom", "Harmony",
+	"Wisdom", "Courage", "Illusion", "Memory", "Balance", "Patience", "Curiosity",
+	"Kindness", "Nostalgia", "Serenity", "Adventure", "Destiny", "Legend", "Secret",
+	"Riddle", "Paradox", "Miracle", "Chaos", "Peace", "Laughter", "Friendship",
+	"Journey", "Promise",
+	// Mythical
+	"Phoenix", "Griffin", "Centaur", "Pegasus", "Minotaur", "Kraken", "Hydra",
+	"Sphinx", "Werewolf", "Vampire", "Zombie", "Goblin", "Troll", "Ogre",
+	"Cyclops", "Basilisk", "Chimera", "Banshee", "Leprechaun",
+	// Body
+	"Skeleton", "Heartbeat", "Fingerprint", "Backbone", "Eyelash", "Dimple",
+	// Patterns
+	"Polkadot", "Camouflage", "Zigzag", "Checkerboard", "Gradient", "Silhouette",
+	// Complex professions/people
+	"Architect", "Inventor", "Explorer", "Blacksmith", "Carpenter", "Jester",
+	"Gladiator", "Viking", "Elf", "Dwarf",
+	// Complex places
+	"Hospital", "Airport", "Cathedral", "Warehouse", "Carnival", "Observatory",
+	"Dungeon", "Chapel", "Marketplace", "Vineyard", "Ranch",
+	// Around the house
+	"Doorbell", "Chimney", "Staircase", "Bathtub", "Chandelier", "Fireplace",
+	"Bookshelf", "Windowsill", "Mailbox", "Cupboard", "Pantry", "Gazebo",
+	// Weather
+	"Snowflake", "Breeze", "Frost", "Icicle", "Dewdrop", "Mist", "Sleet",
+	"Humidity", "Drought",
+}
+
+// allWords is the union of all difficulty lists.
+var allWords []string
+
+func init() {
+	allWords = make([]string, 0, len(easyWords)+len(mediumWords)+len(hardWords))
+	allWords = append(allWords, easyWords...)
+	allWords = append(allWords, mediumWords...)
+	allWords = append(allWords, hardWords...)
+}
+
+// getRandomWord returns a random word from all words.
 func getRandomWord() string {
-	return wordList[rand.Intn(len(wordList))]
+	return allWords[rand.Intn(len(allWords))]
 }
 
-// getRandomWords returns n unique random words from the word list.
+// getRandomWords returns n unique random words from all words.
 func getRandomWords(n int) []string {
-	if n > len(wordList) {
-		n = len(wordList)
+	return pickRandom(allWords, n)
+}
+
+// getRandomWordsByDifficulty returns n unique random words from the given difficulty.
+func getRandomWordsByDifficulty(n int, difficulty string) []string {
+	var pool []string
+	switch difficulty {
+	case DifficultyEasy:
+		pool = easyWords
+	case DifficultyHard:
+		pool = hardWords
+	default:
+		pool = mediumWords
 	}
-	perm := rand.Perm(len(wordList))
+	return pickRandom(pool, n)
+}
+
+func pickRandom(pool []string, n int) []string {
+	if n > len(pool) {
+		n = len(pool)
+	}
+	perm := rand.Perm(len(pool))
 	words := make([]string, n)
 	for i := 0; i < n; i++ {
-		words[i] = wordList[perm[i]]
+		words[i] = pool[perm[i]]
 	}
 	return words
 }

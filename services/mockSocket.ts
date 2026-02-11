@@ -53,6 +53,10 @@ class MockGameService implements GameService {
   chooseWord(_word: string) { /* no-op in mock */ }
   toggleWantsMayor() { /* no-op in mock */ }
   onRoomList(_listener: (rooms: RoomInfo[]) => void) { return () => {}; }
+  sendReaction(_emoji: string) { /* no-op in mock */ }
+  revealHint() { /* no-op in mock */ }
+  setDifficulty(_difficulty: import('../types').Difficulty) { /* no-op in mock */ }
+  onReaction(_listener: (reaction: import('../types').ReactionEvent) => void) { return () => {}; }
 
   joinGame(name: string, _roomCode?: string, _avatarUrl?: string) {
     const newPlayerId = uuidv4();

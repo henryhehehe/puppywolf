@@ -1,4 +1,4 @@
-import { GameService, GameState, ClientMessage, ServerMessage, GamePhase, TokenType, RoomInfo } from '../types';
+import { GameService, GameState, ClientMessage, ServerMessage, GamePhase, TokenType, RoomInfo, Difficulty, ReactionEvent } from '../types';
 
 const getWsUrl = (): string => {
   if (typeof window !== 'undefined') {
@@ -14,6 +14,7 @@ class LiveGameService implements GameService {
   private socket: WebSocket | null = null;
   private listeners: Set<(state: GameState) => void> = new Set();
   private roomListListeners: Set<(rooms: RoomInfo[]) => void> = new Set();
+  private reactionListeners: Set<(reaction: ReactionEvent) => void> = new Set();
   private state: GameState;
   private onConnectCallbacks: (() => void)[] = [];
 
@@ -28,6 +29,9 @@ class LiveGameService implements GameService {
       tokenHistory: [],
       guesses: [],
       myPlayerId: null,
+      difficulty: 'MEDIUM',
+      hintsRevealed: 0,
+      numWerewolves: 1,
     };
   }
 
@@ -87,6 +91,9 @@ class LiveGameService implements GameService {
     } else if (message.type === 'ROOM_LIST') {
       const rooms = (message.payload as { rooms: RoomInfo[] }).rooms;
       this.roomListListeners.forEach(l => l(rooms));
+    } else if (message.type === 'REACTION') {
+      const reaction = message.payload as ReactionEvent;
+      this.reactionListeners.forEach(l => l(reaction));
     }
   }
 
@@ -145,9 +152,26 @@ class LiveGameService implements GameService {
     this.sendMessage({ type: 'ADD_BOT' });
   }
 
+  sendReaction(emoji: string) {
+    this.sendMessage({ type: 'SEND_REACTION', payload: { emoji } });
+  }
+
+  revealHint() {
+    this.sendMessage({ type: 'REVEAL_HINT' });
+  }
+
+  setDifficulty(difficulty: Difficulty) {
+    this.sendMessage({ type: 'SET_DIFFICULTY', payload: { difficulty } });
+  }
+
   onRoomList(listener: (rooms: RoomInfo[]) => void) {
     this.roomListListeners.add(listener);
     return () => this.roomListListeners.delete(listener);
+  }
+
+  onReaction(listener: (reaction: ReactionEvent) => void) {
+    this.reactionListeners.add(listener);
+    return () => this.reactionListeners.delete(listener);
   }
 }
 
