@@ -1,0 +1,5 @@
+{
+  "name": "Werewords Online",
+  "description": "A real-time multiplayer social deduction word game where players guess a secret word while trying to find the Werewolf.",
+  "requestFramePermissions": []
+}
