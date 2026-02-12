@@ -675,24 +675,27 @@ const App = () => {
                       </div>
                     </div>
 
-                    {/* Breed grid */}
-                    <div className="grid grid-cols-8 gap-2">
-                      {AVATAR_SEEDS.map((seed) => (
-                        <button
-                          key={seed}
-                          type="button"
-                          onClick={() => { setSelectedAvatar(seed); audioService.playBreedSelect(getBreedEarType(seed), getBreedHasTongue(seed)); }}
-                          title={BREED_LABELS[seed] || seed}
-                          className={`w-full aspect-square rounded-full overflow-hidden border-[3px] transition-all hover:scale-110 ${
-                            selectedAvatar === seed
-                              ? 'border-amber-400 shadow-lg shadow-amber-400/30 scale-110'
-                              : 'border-slate-600/50 hover:border-slate-500 opacity-70 hover:opacity-100'
-                          }`}
-                        >
-                          <img src={getAvatarUrl(seed)} alt={BREED_LABELS[seed] || seed} className="w-full h-full" />
-                        </button>
-                      ))}
+                    {/* Breed grid — scrollable with two rows of breeds */}
+                    <div className="max-h-[240px] overflow-y-auto rounded-xl pr-1" style={{ scrollbarWidth: 'thin' }}>
+                      <div className="grid grid-cols-8 gap-2">
+                        {AVATAR_SEEDS.map((seed) => (
+                          <button
+                            key={seed}
+                            type="button"
+                            onClick={() => { setSelectedAvatar(seed); audioService.playBreedSelect(getBreedEarType(seed), getBreedHasTongue(seed)); }}
+                            title={BREED_LABELS[seed] || seed}
+                            className={`w-full aspect-square rounded-full overflow-hidden border-[3px] transition-all hover:scale-110 ${
+                              selectedAvatar === seed
+                                ? 'border-amber-400 shadow-lg shadow-amber-400/30 scale-110'
+                                : 'border-slate-600/50 hover:border-slate-500 opacity-70 hover:opacity-100'
+                            }`}
+                          >
+                            <img src={getAvatarUrl(seed)} alt={BREED_LABELS[seed] || seed} className="w-full h-full" />
+                          </button>
+                        ))}
+                      </div>
                     </div>
+                    <p className="text-center text-[10px] text-slate-600 mt-1">Scroll for more pups!</p>
                   </div>
 
                   <button
