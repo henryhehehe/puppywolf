@@ -54,7 +54,7 @@ const PUPPY_BREEDS: Record<string, PuppyConfig> = {
   shihtzu:    { fur: '#F5E6D3', light: '#FFFFFF', earType: 'round', earInner: '#E0D0C0', eyeColor: '#1A1A1A', eyeStyle: 'round', nose: '#3D2614', collar: '#FF69B4', collarTag: '#FFD700', bg: '#FFF8F2', tongue: false, blush: '#FFB0C0', accessory: 'bow', accColor: '#FF69B4' },
   greatDane:  { fur: '#5C6B7A', light: '#8899AA', earType: 'floppy', earInner: '#4A5A6A', eyeColor: '#5C3317', eyeStyle: 'sparkle', nose: '#1A1A1A', collar: '#3498DB', collarTag: '#C0C0C0', bg: '#DDE3EA', tongue: false, blush: '#8090A0', accessory: null },
   // ── Row 3: Two more! ──
-  blackPoodle: { fur: '#1E1E1E', light: '#404040', earType: 'round', earInner: '#303030', eyeColor: '#C6975B', eyeStyle: 'sparkle', nose: '#111111', collar: '#FF69B4', collarTag: '#FFD700', bg: '#EDE8E3', tongue: false, blush: '#6B5050', accessory: 'bow', accColor: '#FF69B4' },
+  blackPug:    { fur: '#2A2A2A', light: '#4A4A4A', earType: 'floppy', earInner: '#1A1A1A', eyeColor: '#C6975B', eyeStyle: 'round', nose: '#111111', collar: '#FF69B4', collarTag: '#FFD700', bg: '#EDE8E3', tongue: true, blush: '#6B5050', accessory: 'bow', accColor: '#FF69B4' },
   akita:       { fur: '#D48840', light: '#FFF5E6', earType: 'pointy', earInner: '#C07030', eyeColor: '#3D2614', eyeStyle: 'sleepy', nose: '#1A1A1A', collar: '#E74C3C', collarTag: '#FFD700', bg: '#FFF0DB', tongue: false, blush: '#D4A070', headPatch: '#FFFFFF', accessory: 'bandana', accColor: '#E74C3C' },
 };
 
@@ -350,6 +350,6 @@ export const BREED_LABELS: Record<string, string> = {
   shihtzu: 'Shih Tzu',
   greatDane: 'Great Dane',
   // Row 3
-  blackPoodle: 'Black Poodle',
+  blackPug: 'Black Pug',
   akita: 'Akita',
 };
