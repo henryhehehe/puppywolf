@@ -38,21 +38,24 @@ const PUPPY_BREEDS: Record<string, PuppyConfig> = {
   aussie:     { fur: '#6B7B8D', light: '#C4B19A', earType: 'pointy', earInner: '#8B9BAA', eyeColor: '#5B9BD5', eyeStyle: 'sparkle', nose: '#3D2614', collar: '#9B59B6', collarTag: '#C0C0C0', bg: '#DDE3EA', tongue: false, blush: '#B0A0B4', spots: '#4A5568', accessory: 'heart', accColor: '#AF7AC5' },
   bernese:    { fur: '#1A1A1A', light: '#D4843E', earType: 'floppy', earInner: '#3A2A2A', eyeColor: '#5C3317', eyeStyle: 'sparkle', nose: '#1A1A1A', collar: '#E74C3C', collarTag: '#FFD700', bg: '#E0D5CC', tongue: true, blush: '#C49070', headPatch: '#FFFFFF', accessory: null },
   chihuahua:  { fur: '#E8CBA5', light: '#F5E6D3', earType: 'bat', earInner: '#D4B090', eyeColor: '#3D2614', eyeStyle: 'round', nose: '#D4838F', collar: '#FF69B4', collarTag: '#FFD700', bg: '#FFF5EB', tongue: false, blush: '#FFBCC8', accessory: 'bow', accColor: '#FF69B4' },
-  // ── Row 2: More breeds ──
-  blackLab:   { fur: '#1A1A1A', light: '#3D3D3D', earType: 'floppy', earInner: '#2A2A2A', eyeColor: '#8B7355', eyeStyle: 'sparkle', nose: '#0A0A0A', collar: '#FFD700', collarTag: '#FFD700', bg: '#D5D0CB', tongue: true, blush: '#6B5050', accessory: null },
-  rottweiler: { fur: '#1A1A1A', light: '#A0522D', earType: 'floppy', earInner: '#2A1A1A', eyeColor: '#5C3317', eyeStyle: 'round', nose: '#0A0A0A', collar: '#C0392B', collarTag: '#C0C0C0', bg: '#D8CBBF', tongue: false, blush: '#705050', headPatch: '#A0522D', accessory: 'star', accColor: '#C0392B' },
+  // ── Row 2: More breeds (with black/dark pups!) ──
+  blackLab:   { fur: '#222222', light: '#555555', earType: 'floppy', earInner: '#333333', eyeColor: '#C6975B', eyeStyle: 'sparkle', nose: '#111111', collar: '#FFD700', collarTag: '#FFD700', bg: '#F0EBE5', tongue: true, blush: '#8B6060', accessory: null },
+  rottweiler: { fur: '#2A2A2A', light: '#C87533', earType: 'floppy', earInner: '#3A2A1A', eyeColor: '#8B6840', eyeStyle: 'round', nose: '#111111', collar: '#C0392B', collarTag: '#C0C0C0', bg: '#EDE5DB', tongue: false, blush: '#8B6050', headPatch: '#C87533', accessory: 'star', accColor: '#C0392B' },
   germanShep: { fur: '#8B6914', light: '#D4A44A', earType: 'pointy', earInner: '#705010', eyeColor: '#3D2614', eyeStyle: 'sparkle', nose: '#1A1A1A', collar: '#2C3E50', collarTag: '#C0C0C0', bg: '#EDE0C8', tongue: true, blush: '#B09060', headPatch: '#1A1A1A', accessory: null },
   pug:        { fur: '#D4B896', light: '#E8D5BA', earType: 'floppy', earInner: '#5C3317', eyeColor: '#1A1A1A', eyeStyle: 'round', nose: '#1A1A1A', collar: '#FF69B4', collarTag: '#FFD700', bg: '#F5EDE0', tongue: true, blush: '#D4A090', accessory: 'bow', accColor: '#FF69B4' },
   boxer:      { fur: '#B87333', light: '#FFFFFF', earType: 'floppy', earInner: '#8B5A2B', eyeColor: '#3D2614', eyeStyle: 'sparkle', nose: '#1A1A1A', collar: '#E74C3C', collarTag: '#FFD700', bg: '#F0DCC8', tongue: true, blush: '#C49070', headPatch: '#FFFFFF', accessory: null },
   yorkie:     { fur: '#4A3728', light: '#B8956A', earType: 'pointy', earInner: '#6B4F38', eyeColor: '#1A1A1A', eyeStyle: 'sparkle', nose: '#3D2614', collar: '#E91E63', collarTag: '#FFD700', bg: '#E8D5C0', tongue: false, blush: '#A08070', accessory: 'bow', accColor: '#E91E63' },
   maltese:    { fur: '#FFFFFF', light: '#F8F4F0', earType: 'round', earInner: '#F0E8E0', eyeColor: '#1A1A1A', eyeStyle: 'sparkle', nose: '#3D2614', collar: '#FF69B4', collarTag: '#FFD700', bg: '#FFF8F5', tongue: false, blush: '#FFB8D0', accessory: 'flower', accColor: '#FFB6D9' },
-  doberman:   { fur: '#1A1A1A', light: '#8B4513', earType: 'pointy', earInner: '#3A2A2A', eyeColor: '#5C3317', eyeStyle: 'sparkle', nose: '#0A0A0A', collar: '#2C3E50', collarTag: '#C0C0C0', bg: '#D0C5BB', tongue: false, blush: '#604040', headPatch: '#8B4513', accessory: 'star', accColor: '#2C3E50' },
-  scottieTerrier: { fur: '#1A1A1A', light: '#3A3A3A', earType: 'pointy', earInner: '#2A2A2A', eyeColor: '#5C3317', eyeStyle: 'round', nose: '#1A1A1A', collar: '#E74C3C', collarTag: '#FFD700', bg: '#D5CFCF', tongue: false, blush: '#5A4545', accessory: 'bandana', accColor: '#E74C3C' },
+  doberman:   { fur: '#252525', light: '#B8763D', earType: 'pointy', earInner: '#3A2A1A', eyeColor: '#8B6840', eyeStyle: 'sparkle', nose: '#111111', collar: '#2C3E50', collarTag: '#C0C0C0', bg: '#E8E0D8', tongue: false, blush: '#7A5545', headPatch: '#B8763D', accessory: 'star', accColor: '#2C3E50' },
+  scottieTerrier: { fur: '#282828', light: '#4A4A4A', earType: 'pointy', earInner: '#383838', eyeColor: '#8B7355', eyeStyle: 'round', nose: '#111111', collar: '#E74C3C', collarTag: '#FFD700', bg: '#EAE4DE', tongue: false, blush: '#7A5555', accessory: 'bandana', accColor: '#E74C3C' },
   cockerSpaniel: { fur: '#C6883D', light: '#E8C48A', earType: 'floppy', earInner: '#A06820', eyeColor: '#3D2614', eyeStyle: 'sparkle', nose: '#3D2614', collar: '#9B59B6', collarTag: '#FFD700', bg: '#F5E8D0', tongue: true, blush: '#D4A878', accessory: 'flower', accColor: '#AF7AC5' },
   papillon:   { fur: '#FFFFFF', light: '#F5F0EB', earType: 'bat', earInner: '#D4843E', eyeColor: '#3D2614', eyeStyle: 'sparkle', nose: '#3D2614', collar: '#FF69B4', collarTag: '#FFD700', bg: '#FFF5F0', tongue: false, blush: '#FFB8C8', spots: '#D4843E', accessory: 'heart', accColor: '#FF6B9D' },
   stBernard:  { fur: '#A0522D', light: '#FFFFFF', earType: 'floppy', earInner: '#7B3F1A', eyeColor: '#5C3317', eyeStyle: 'sleepy', nose: '#3D2614', collar: '#E74C3C', collarTag: '#FFD700', bg: '#EAD8C4', tongue: true, blush: '#C49070', headPatch: '#FFFFFF', accessory: 'bandana', accColor: '#E74C3C' },
   shihtzu:    { fur: '#F5E6D3', light: '#FFFFFF', earType: 'round', earInner: '#E0D0C0', eyeColor: '#1A1A1A', eyeStyle: 'round', nose: '#3D2614', collar: '#FF69B4', collarTag: '#FFD700', bg: '#FFF8F2', tongue: false, blush: '#FFB0C0', accessory: 'bow', accColor: '#FF69B4' },
   greatDane:  { fur: '#5C6B7A', light: '#8899AA', earType: 'floppy', earInner: '#4A5A6A', eyeColor: '#5C3317', eyeStyle: 'sparkle', nose: '#1A1A1A', collar: '#3498DB', collarTag: '#C0C0C0', bg: '#DDE3EA', tongue: false, blush: '#8090A0', accessory: null },
+  // ── Row 3: Two more! ──
+  blackPoodle: { fur: '#1E1E1E', light: '#404040', earType: 'round', earInner: '#303030', eyeColor: '#C6975B', eyeStyle: 'sparkle', nose: '#111111', collar: '#FF69B4', collarTag: '#FFD700', bg: '#EDE8E3', tongue: false, blush: '#6B5050', accessory: 'bow', accColor: '#FF69B4' },
+  akita:       { fur: '#D48840', light: '#FFF5E6', earType: 'pointy', earInner: '#C07030', eyeColor: '#3D2614', eyeStyle: 'sleepy', nose: '#1A1A1A', collar: '#E74C3C', collarTag: '#FFD700', bg: '#FFF0DB', tongue: false, blush: '#D4A070', headPatch: '#FFFFFF', accessory: 'bandana', accColor: '#E74C3C' },
 };
 
 function generatePuppySvg(config: PuppyConfig): string {
@@ -346,4 +349,7 @@ export const BREED_LABELS: Record<string, string> = {
   stBernard: 'St. Bernard',
   shihtzu: 'Shih Tzu',
   greatDane: 'Great Dane',
+  // Row 3
+  blackPoodle: 'Black Poodle',
+  akita: 'Akita',
 };
